@@ -1,0 +1,11 @@
+Stream of x + 1
+Call x + 1
+Load library
+Set up arguments
+-- Create general integer tensor
+---Create 1D integer tensor
+Create float tensor
+Create branch type
+Manager object
+Automatic memory management
+
