@@ -25,7 +25,6 @@ typedef struct FloatTensorStruct {
 
 typedef struct DataBlock DataBlock;
 
-void getInputIntTensor(
-        DataBlock *block, int inPortNum, IntTensorStruct *tensor);
+IntTensorStruct const * getInputIntTensor(DataBlock *block, int inPortNum);
 
 #endif

@@ -3,7 +3,7 @@
 build() {
     mkdir -p build &&
     cd build &&
-    cmake .. &&
+    cmake -DCMAKE_BUILD_TYPE=$1 .. &&
     make &&
     cd ..;
 }
@@ -23,12 +23,20 @@ run_tests() {
              --suppressions=valgrind_suppressions.txt build/bin/tests;
 }
 
+full() {
+    clean;
+    build RELEASE;
+    run_tests;
+    docs;
+}
+
 while getopts ":bdcr" opt; do
     case $opt in
-        b) build ;;
+        b) build DEBUG ;;
         d) docs ;;
         c) clean ;;
         r) run_tests ;;
+        f) full ;;
         *) echo "Invalid option: -$OPTARG" >&2
     esac
 done

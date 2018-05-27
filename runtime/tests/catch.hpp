@@ -2489,11 +2489,17 @@ namespace Catch {
 } // end namespace Catch
 
 #ifdef CATCH_CONFIG_VARIADIC_MACROS
+    #define INTERNAL_CATCH_SECTION_EXP(sectionId, ... ) \
+        Catch::Section const& sectionId((Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, __VA_ARGS__ ))); \
+        if( sectionId )
     #define INTERNAL_CATCH_SECTION( ... ) \
-        if( Catch::Section const& INTERNAL_CATCH_UNIQUE_NAME( catch_internal_Section ) {Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, __VA_ARGS__ )} )
+        INTERNAL_CATCH_SECTION_EXP(INTERNAL_CATCH_UNIQUE_NAME( catch_internal_Section ), __VA_ARGS__)
 #else
+    #define INTERNAL_CATCH_SECTION_EXP(sectionId, name, desc ) \
+        Catch::Section const& sectionId((Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, name, desc ))); \
+        if( sectionId )
     #define INTERNAL_CATCH_SECTION( name, desc ) \
-        if( Catch::Section const& INTERNAL_CATCH_UNIQUE_NAME( catch_internal_Section ) {Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, name, desc )} )
+        INTERNAL_CATCH_SECTION_EXP(INTERNAL_CATCH_UNIQUE_NAME( catch_internal_Section ), name, desc)
 #endif
 
 // #included from: internal/catch_generators.hpp

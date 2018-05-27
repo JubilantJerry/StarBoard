@@ -1,5 +1,6 @@
 #include <iostream>
-#include <memory>
+#include <utility>
+#include "custom_utility.hpp"
 
 #include "catch.hpp"
 #include "native_interface.hpp"
@@ -100,17 +101,18 @@ TEST_CASE("Create float tensor", "[native_interface]") {
 
 TEST_CASE("Access data block", "[native_interface]") {
     DataBlock block{1, 0, 1};
-    block.setInput(0, IntTensorObj{(NumSizes){2}, 1});
+    DataPtr t = make_unique<IntTensorObj>((NumSizes){2}, 1, 1);
+    block.setInput(0, std::move(t));
     DataBlock *blockPtr = &block;
 
     SECTION("Access input values") {
-        IntTensorStruct intTensor;
-        getInputIntTensor(blockPtr, 0, &intTensor);
-        REQUIRE(intTensor.numSizes == 2);
-        REQUIRE(intTensor.sizes[0] == 1);
+        IntTensorStruct const * intTensor;
+        intTensor = getInputIntTensor(blockPtr, 0);
+        REQUIRE(intTensor->numSizes == 2);
+        REQUIRE(intTensor->sizes[0] == 1);
 
-        intTensor.contents[0] = 5;
-        getInputIntTensor(blockPtr, 0, &intTensor);
-        REQUIRE(intTensor.contents[0] == 5);
+        intTensor->contents[0] = 5;
+        intTensor = getInputIntTensor(blockPtr, 0);
+        REQUIRE(intTensor->contents[0] == 5);
     }
 }
