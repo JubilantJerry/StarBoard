@@ -4,22 +4,25 @@
 #include "catch.hpp"
 #include "native_interface.hpp"
 
-TEST_CASE("Create integer tensor", "[interface]") {
-    DataUnion data;        IntTensorObj intTensor{numSizesArg(1), 2};
+TEST_CASE("Create integer tensor", "[native_interface]") {
+    SECTION("Default construction") {
+        IntTensorObj intTensor{};
+        REQUIRE(intTensor.getNumSizes() == 0);
+    }
 
     SECTION("Size 2 tensor") {
-        IntTensorObj intTensor{numSizesArg(1), 2};
-        data.intTensor = &intTensor;
+        IntTensorObj intTensor{(NumSizes){1}, 2};
+        IntTensorStruct *intTensorStruct = &intTensor;
 
         SECTION("Tensor check size") {
             REQUIRE(intTensor.getNumSizes() == 1);
             REQUIRE(intTensor.getSizes()[0] == 2);
-            REQUIRE(data.intTensor->numSizes == 1);
-            REQUIRE(data.intTensor->sizes[0] == 2);
+            REQUIRE(intTensorStruct->numSizes == 1);
+            REQUIRE(intTensorStruct->sizes[0] == 2);
         }
 
         SECTION("Write & read") {
-            int *d = data.intTensor->contents;
+            int *d = intTensorStruct->contents;
             d[0] = 5;
             d[1] = 6;
             REQUIRE(d[0] == 5);
@@ -28,33 +31,86 @@ TEST_CASE("Create integer tensor", "[interface]") {
     }
 
     SECTION("Size (2, 3) tensor") {
-        IntTensorObj intTensor{numSizesArg(2), 2, 3};
-        data.intTensor = &intTensor;
+        IntTensorObj intTensor{(NumSizes){2}, 2, 3};
+        IntTensorStruct *intTensorStruct = &intTensor;
 
         SECTION("Tensor check size") {
             REQUIRE(intTensor.getNumSizes() == 2);
             REQUIRE(intTensor.getSizes()[0] == 2);
             REQUIRE(intTensor.getSizes()[1] == 3);
-            REQUIRE(data.intTensor->numSizes == 2);
-            REQUIRE(data.intTensor->sizes[0] == 2);
-            REQUIRE(data.intTensor->sizes[1] == 3);
+            REQUIRE(intTensorStruct->numSizes == 2);
+            REQUIRE(intTensorStruct->sizes[0] == 2);
+            REQUIRE(intTensorStruct->sizes[1] == 3);
         }
 
         SECTION("Write & read") {
-            int *s = data.intTensor->sizes;
-            int *d = data.intTensor->contents;
-            d[I(s[1], 0, 0)] = 1;
-            d[I(s[1], 0, 1)] = 2;
-            d[I(s[1], 0, 2)] = 3;
-            d[I(s[1], 1, 0)] = 4;
-            d[I(s[1], 1, 1)] = 5;
-            d[I(s[1], 1, 2)] = 6;
-            REQUIRE(d[0] == 1);
-            REQUIRE(d[1] == 2);
-            REQUIRE(d[2] == 3);
-            REQUIRE(d[3] == 4);
-            REQUIRE(d[4] == 5);
-            REQUIRE(d[5] == 6);
+            int *s = intTensorStruct->sizes;
+            int *d = intTensorStruct->contents;
+            d[I(s[1], (0), 0)] = 0;
+            d[I(s[1], (0), 1)] = 1;
+            d[I(s[1], (0), 2)] = 2;
+            d[I(s[1], (1), 0)] = 3;
+            d[I(s[1], (1), 1)] = 4;
+            d[I(s[1], (1), 2)] = 5;
+            for (int i = 0; i < 6; i++) {
+                REQUIRE(d[i] == i);
+            }
         }
+    }
+}
+
+TEST_CASE("Create float tensor", "[native_interface]") {
+    SECTION("Default construction") {
+        FloatTensorObj floatTensor{};
+        REQUIRE(floatTensor.getNumSizes() == 0);
+    }
+
+    SECTION("Size (2, 2, 2) tensor") {
+        FloatTensorObj floatTensor{(NumSizes){3}, 2, 2, 2};
+        FloatTensorStruct *floatTensorStruct = &floatTensor;
+
+        SECTION("Tensor check size") {
+            REQUIRE(floatTensor.getNumSizes() == 3);
+            REQUIRE(floatTensor.getSizes()[0] == 2);
+            REQUIRE(floatTensor.getSizes()[1] == 2);
+            REQUIRE(floatTensor.getSizes()[2] == 2);
+            REQUIRE(floatTensorStruct->numSizes == 3);
+            REQUIRE(floatTensorStruct->sizes[0] == 2);
+            REQUIRE(floatTensorStruct->sizes[1] == 2);
+            REQUIRE(floatTensorStruct->sizes[2] == 2);
+        }
+
+        SECTION("Write & read") {
+            int *s = floatTensorStruct->sizes;
+            float *d = floatTensorStruct->contents;
+            d[I(s[2], I(s[1], (0), 0), 0)] = 0.0;
+            d[I(s[2], I(s[1], (0), 0), 1)] = 0.1;
+            d[I(s[2], I(s[1], (0), 1), 0)] = 0.2;
+            d[I(s[2], I(s[1], (0), 1), 1)] = 0.3;
+            d[I(s[2], I(s[1], (1), 0), 0)] = 0.4;
+            d[I(s[2], I(s[1], (1), 0), 1)] = 0.5;
+            d[I(s[2], I(s[1], (1), 1), 0)] = 0.6;
+            d[I(s[2], I(s[1], (1), 1), 1)] = 0.7;
+            for (int i = 0; i < 8; i++) {
+                REQUIRE(d[i] == (float) i / 10);
+            }
+        }
+    }
+}
+
+TEST_CASE("Access data block", "[native_interface]") {
+    DataBlock block{1, 0, 1};
+    block.setInput(0, IntTensorObj{(NumSizes){2}, 1});
+    DataBlock *blockPtr = &block;
+
+    SECTION("Access input values") {
+        IntTensorStruct intTensor;
+        getInputIntTensor(blockPtr, 0, &intTensor);
+        REQUIRE(intTensor.numSizes == 2);
+        REQUIRE(intTensor.sizes[0] == 1);
+
+        intTensor.contents[0] = 5;
+        getInputIntTensor(blockPtr, 0, &intTensor);
+        REQUIRE(intTensor.contents[0] == 5);
     }
 }

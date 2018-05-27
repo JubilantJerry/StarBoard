@@ -7,14 +7,25 @@
 
 #define I(multiplier, index, remain) (multiplier * index + remain)
 
-typedef struct {
+typedef struct NumSizes {
+    int value;
+} NumSizes;
+
+typedef struct IntTensorStruct {
     int numSizes;
     int *sizes;
     int *contents;
 } IntTensorStruct;
 
-typedef union {
-    IntTensorStruct *intTensor;
-} DataUnion;
+typedef struct FloatTensorStruct {
+    int numSizes;
+    int *sizes;
+    float *contents;
+} FloatTensorStruct;
+
+typedef struct DataBlock DataBlock;
+
+void getInputIntTensor(
+        DataBlock *block, int inPortNum, IntTensorStruct *tensor);
 
 #endif
