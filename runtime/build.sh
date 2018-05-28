@@ -30,7 +30,7 @@ full() {
     docs;
 }
 
-while getopts ":bdcr" opt; do
+while getopts ":bdcrf" opt; do
     case $opt in
         b) build DEBUG ;;
         d) docs ;;

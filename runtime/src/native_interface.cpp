@@ -68,6 +68,6 @@ DataBlock::DataBlock(int numInputs, int numStateData, int numOutputs)
     :inputs(std::vector<DataPtr>(numInputs)) {}
 
 IntTensorStruct const * getInputIntTensor(DataBlock *block, int inPortNum) {
-    return dynamic_cast<IntTensorObj const *>(
+    return static_cast<IntTensorObj const *>(
         block->inputs[inPortNum].get());
 }
