@@ -103,14 +103,84 @@ public:
     }
 };
 
+class Branch final: public Data {
+private:
+    std::vector<DataPtr> values;
+
+    std::ostream& print(std::ostream &stream) const override;
+
+    friend int getBranchSize(Branch const *branch) {
+        return branch->getSize();
+    }
+
+    friend IntTensorStruct const * getBranchIntTensor(
+            Branch const *branch, int index) {
+
+        return static_cast<IntTensorObj const *>(
+            branch->values[index].get());
+    }
+
+    friend FloatTensorStruct const * getBranchFloatTensor(
+            Branch const *branch, int index) {
+
+        return static_cast<FloatTensorObj const *>(
+            branch->values[index].get());
+    }
+
+    friend Branch const * getBranchBranch(
+            Branch const *branch, int index) {
+
+        return static_cast<Branch const *>(
+            branch->values[index].get());
+    }
+
+
+public:
+    Branch():  values(0) {}
+
+    Branch(int size): values(size) {}
+
+    void setValue(int index, DataPtr &&data) {
+        values[index] = std::move(data);
+    }
+
+    int getSize() const {
+        return values.size();
+    }
+};
+
 class DataBlock final {
 private:
     std::vector<DataPtr> inputs;
 
-    friend IntTensorStruct const * getInputIntTensor(DataBlock *block, int inPortNum);
+    friend int getNumInputs(DataBlock const *block) {
+        return block->getNumInputs();
+    }
+
+    friend IntTensorStruct const * getInputIntTensor(
+            DataBlock const *block, int inPortNum) {
+        return static_cast<IntTensorObj const *>(
+            block->inputs[inPortNum].get());
+    }
+
+    friend FloatTensorStruct const * getInputFloatTensor(
+            DataBlock const *block, int inPortNum) {
+        return static_cast<FloatTensorObj const *>(
+            block->inputs[inPortNum].get());
+    }
+
+    friend Branch const * getInputBranch(
+            DataBlock const *block, int inPortNum) {
+        return static_cast<Branch const *>(
+            block->inputs[inPortNum].get());
+    }
 
 public:
     DataBlock(int numInputs, int numStateData, int numOutputs);
+
+    int getNumInputs() const {
+        return inputs.size();
+    }
 
     void setInput(int inPortNum, DataPtr &&data) {
         inputs[inPortNum] = std::move(data);

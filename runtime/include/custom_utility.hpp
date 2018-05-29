@@ -1,9 +1,10 @@
 #include <iostream>
 #include <iterator>
+#include <vector>
 #include <memory>
 
 template<typename InputIterator>
-static inline std::ostream& operator<<(
+std::ostream& operator<<(
         std::ostream &stream,
         std::pair<InputIterator, InputIterator> range) {
 
@@ -20,6 +21,24 @@ static inline std::ostream& operator<<(
         ++start;
     }
     stream << "]";
+}
+
+template<typename T>
+static inline std::ostream& operator<<(
+        std::ostream &stream,
+        std::vector<T> const &values) {
+
+    stream << std::make_pair(values.begin(), values.end());
+    return stream;
+}
+
+template<typename T>
+static inline std::ostream& operator<<(
+        std::ostream &stream,
+        std::unique_ptr<T> const &ptr) {
+
+    stream << '&' << *ptr;
+    return stream;
 }
 
 #if __cplusplus < 201400L

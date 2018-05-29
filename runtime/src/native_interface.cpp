@@ -64,10 +64,11 @@ std::ostream& FloatTensorObj::print(std::ostream &stream) const {
     return stream;
 }
 
-DataBlock::DataBlock(int numInputs, int numStateData, int numOutputs)
-    :inputs(std::vector<DataPtr>(numInputs)) {}
-
-IntTensorStruct const * getInputIntTensor(DataBlock *block, int inPortNum) {
-    return static_cast<IntTensorObj const *>(
-        block->inputs[inPortNum].get());
+std::ostream& Branch::print(std::ostream &stream) const {
+    stream << values;
+    return stream;
 }
+
+DataBlock::DataBlock(
+        int numInputs, int numStateData, int numOutputs)
+    :inputs(numInputs) {}
