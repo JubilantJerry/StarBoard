@@ -1,5 +1,3 @@
-#include "custom_utility.hpp"
-
 #include "native_interface.hpp"
 
 static inline int fillSizes(int numSizes, va_list sizesList, int *sizes) {
@@ -71,4 +69,4 @@ std::ostream& Branch::print(std::ostream &stream) const {
 
 DataBlock::DataBlock(
         int numInputs, int numStateData, int numOutputs)
-    :inputs(numInputs) {}
+    :inputs(numInputs), outputs(numOutputs) {}

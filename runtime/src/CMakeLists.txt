@@ -5,5 +5,4 @@ set(CMAKE_CXX_STANDARD 11)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 add_library(native_interface STATIC native_interface.cpp)
-
-# add_executable(demo demo.cpp)
+add_library(native_loader STATIC native_loader.cpp)

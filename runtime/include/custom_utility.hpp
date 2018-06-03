@@ -1,3 +1,6 @@
+#ifndef CUSTOM_UTILITY_HPP
+#define CUSTOM_UTILITY_HPP
+
 #include <iostream>
 #include <iterator>
 #include <vector>
@@ -48,4 +51,6 @@ static inline std::ostream& operator<<(
     }
 #else
     using std::make_unique;
+#endif
+
 #endif

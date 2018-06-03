@@ -1,8 +1,13 @@
+#ifndef NATIVE_INTERFACE_HPP
+#define NATIVE_INTERFACE_HPP
+
 #include <iostream>
 #include <utility>
 #include <memory>
 #include <vector>
 #include <cstdarg>
+
+#include "custom_utility.hpp"
 
 extern "C" {
 #include "native_interface.h"
@@ -18,12 +23,12 @@ protected:
     virtual std::ostream& print(std::ostream &stream) const = 0;
 
 public:
-    Data() = default;
-    virtual ~Data() = default;
+    Data() noexcept = default;
+    virtual ~Data() noexcept = default;
     Data(Data const&) = delete;
-    Data(Data&&) = default;
+    Data(Data&&) noexcept = default;
     Data& operator=(Data const&) = delete;
-    virtual Data& operator=(Data&&) = default;
+    virtual Data& operator=(Data&&) noexcept = default;
 };
 
 using DataPtr = std::unique_ptr<Data>;
@@ -39,7 +44,7 @@ private:
     std::ostream& print(std::ostream &stream) const override;
 
 public:
-    IntTensorObj() {
+    IntTensorObj() noexcept {
         numSizes = 0;
         sizes = nullptr;
         contents = nullptr;
@@ -47,7 +52,7 @@ public:
     IntTensorObj(NumSizes numSizesV, ...);
     IntTensorObj(NumSizes numSizesV, va_list args);
 
-    ~IntTensorObj() {
+    ~IntTensorObj() noexcept {
         delete[] sizes;
         delete[] contents;
     }
@@ -76,7 +81,7 @@ private:
     std::ostream& print(std::ostream &stream) const override;
 
 public:
-    FloatTensorObj() {
+    FloatTensorObj() noexcept {
         numSizes = 0;
         sizes = nullptr;
         contents = nullptr;
@@ -85,20 +90,20 @@ public:
     FloatTensorObj(NumSizes numSizesV, ...);
     FloatTensorObj(NumSizes numSizesV, va_list sizesList);
 
-    ~FloatTensorObj() {
+    ~FloatTensorObj() noexcept {
         delete[] sizes;
         delete[] contents;
     }
 
-    int getNumSizes() {
+    int getNumSizes() noexcept {
         return numSizes;
     }
 
-    int *getSizes() {
+    int *getSizes() noexcept {
         return sizes;
     }
 
-    float *getContents() {
+    float *getContents() noexcept {
         return contents;
     }
 };
@@ -140,11 +145,11 @@ public:
 
     Branch(int size): values(size) {}
 
-    void setValue(int index, DataPtr &&data) {
+    void setValue(int index, DataPtr &&data) noexcept {
         values[index] = std::move(data);
     }
 
-    int getSize() const {
+    int getSize() const noexcept {
         return values.size();
     }
 };
@@ -152,6 +157,7 @@ public:
 class DataBlock final {
 private:
     std::vector<DataPtr> inputs;
+    std::vector<DataPtr> outputs;
 
     friend int getNumInputs(DataBlock const *block) {
         return block->getNumInputs();
@@ -175,14 +181,80 @@ private:
             block->inputs[inPortNum].get());
     }
 
+    friend int getNumOutputs(DataBlock const *block) {
+        return block->getNumOutputs();
+    }
+
+    friend IntTensorStruct const * makeOutputIntTensor(
+            DataBlock *block, int outPortNum,
+            NumSizes numSizesV, ...) {
+        va_list sizesList;
+        va_start(sizesList, numSizesV);
+        block->outputs[outPortNum] =
+            make_unique<IntTensorObj>(numSizesV, sizesList);
+        va_end(sizesList);
+        return static_cast<IntTensorObj const *>(
+            block->outputs[outPortNum].get());
+    }
+
+    friend FloatTensorStruct const * makeOutputFloatTensor(
+            DataBlock *block, int outPortNum,
+            NumSizes numSizesV, ...) {
+        va_list sizesList;
+        va_start(sizesList, numSizesV);
+        block->outputs[outPortNum] =
+            make_unique<FloatTensorObj>(numSizesV, sizesList);
+        va_end(sizesList);
+        return static_cast<FloatTensorObj const *>(
+            block->outputs[outPortNum].get());
+    }
+
+    friend Branch const * makeOutputBranch(
+            DataBlock *block, int outPortNum, int size) {
+        block->outputs[outPortNum] = make_unique<Branch>(size);
+        return static_cast<Branch const *>(
+            block->outputs[outPortNum].get());
+    }
+
+    friend IntTensorStruct const * moveToOutputIntTensor(
+            DataBlock *block, int outPortNum, int inPortNum) {
+        block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
+        return static_cast<IntTensorObj const *>(
+            block->outputs[outPortNum].get());
+    }
+
+    friend FloatTensorStruct const * moveToOutputFloatTensor(
+            DataBlock *block, int outPortNum, int inPortNum) {
+        block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
+        return static_cast<FloatTensorObj const *>(
+            block->outputs[outPortNum].get());
+    }
+
+    friend Branch const * moveToOutputBranch(
+            DataBlock *block, int outPortNum, int inPortNum) {
+        block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
+        return static_cast<Branch const *>(
+            block->outputs[outPortNum].get());
+    }
+
 public:
     DataBlock(int numInputs, int numStateData, int numOutputs);
 
-    int getNumInputs() const {
+    int getNumInputs() const noexcept {
         return inputs.size();
     }
 
-    void setInput(int inPortNum, DataPtr &&data) {
+    int getNumOutputs() const noexcept {
+        return outputs.size();
+    }
+
+    void setInput(int inPortNum, DataPtr &&data) noexcept {
         inputs[inPortNum] = std::move(data);
     }
+
+    DataPtr && takeOutput(int outPortNum) noexcept {
+        return std::move(outputs[outPortNum]);
+    }
 };
+
+#endif

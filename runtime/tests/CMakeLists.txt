@@ -4,5 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
-add_executable(tests test_main.cpp test_data.cpp)
-target_link_libraries(tests native_interface)
+add_library(add_one MODULE add_one.c)
+
+add_executable(tests test_main.cpp test_data.cpp test_foreign_call.cpp)
+target_link_libraries(tests native_interface native_loader ${CMAKE_DL_LIBS})

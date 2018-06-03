@@ -41,6 +41,26 @@ FloatTensorStruct const * getInputFloatTensor(
 Branch const * getInputBranch(
         DataBlock const *block, int inPortNum);
 
+int getNumOutputs(DataBlock const *block);
+
+IntTensorStruct const * makeOutputIntTensor(
+        DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
+
+FloatTensorStruct const * makeOutputFloatTensor(
+        DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
+
+Branch const * makeOutputBranch(
+        DataBlock *block, int outPortNum, int size);
+
+IntTensorStruct const * moveToOutputIntTensor(
+        DataBlock *block, int outPortNum, int inPortNum);
+
+FloatTensorStruct const * moveToOutputFloatTensor(
+        DataBlock *block, int outPortNum, int inPortNum);
+
+Branch const * moveToOutputBranch(
+        DataBlock *block, int outPortNum, int inPortNum);
+
 int getBranchSize(Branch const *branch);
 
 IntTensorStruct const * getBranchIntTensor(
