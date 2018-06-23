@@ -45,7 +45,7 @@ TEST_CASE("Create integer tensor", "[native_interface]") {
         }
 
         SECTION("Write & read") {
-            int *s = intTensorStruct->sizes;
+            int const *s = intTensorStruct->sizes;
             int *d = intTensorStruct->contents;
             d[INDEX(s, 0, 0)] = 0;
             d[INDEX(s, 0, 1)] = 1;
@@ -82,7 +82,7 @@ TEST_CASE("Create float tensor", "[native_interface]") {
         }
 
         SECTION("Write & read") {
-            int *s = floatTensorStruct->sizes;
+            int const *s = floatTensorStruct->sizes;
             float *d = floatTensorStruct->contents;
             d[INDEX(s, 0, 0, 0)] = 0.0f;
             d[INDEX(s, 0, 0, 1)] = 0.1f;
@@ -101,14 +101,14 @@ TEST_CASE("Create float tensor", "[native_interface]") {
 
 TEST_CASE("Create branches", "[native_interface]") {
     SECTION("Empty branch") {
-        Branch empty{};
+        Branch empty{0};
         REQUIRE(empty.getSize() == 0);
         REQUIRE(getBranchSize(&empty) == 0);
     }
 
     SECTION("Int / Float tuple as a branch") {
         Branch branch{2};
-        Branch const *branchPtr;
+        Branch *branchPtr;
 
         {
             std::unique_ptr<IntTensorObj> intScalar;
@@ -137,17 +137,56 @@ TEST_CASE("Create branches", "[native_interface]") {
 
     SECTION("Branch containing empty branch") {
         Branch branch{2};
-        Branch const *branchPtr;
+        Branch *branchPtr;
 
         {
-            std::unique_ptr<Branch> branchEmpty = make_unique<Branch>();
+            std::unique_ptr<Branch> branchEmpty = make_unique<Branch>(0);
 
             branch.setValue(0, std::move(branchEmpty));
             branchPtr = &branch;
         }
 
-        Branch const *branchEmpty = getBranchBranch(branchPtr, 0);
+        Branch *branchEmpty = getBranchBranch(branchPtr, 0);
         REQUIRE(getBranchSize(branchEmpty) == 0);
+    }
+
+    SECTION("Modifying branches") {
+        Branch branch{1};
+        Branch *branchPtr = &branch;
+
+        IntTensorStruct const *intTensor;
+        FloatTensorStruct const *floatTensor;
+        Branch *branchInner;
+
+        intTensor = makeBranchIntTensor(branchPtr, 0, (NumSizes){1}, 1);
+        REQUIRE(intTensor->numSizes == 1);
+
+        floatTensor = makeBranchFloatTensor(branchPtr, 0, (NumSizes){1}, 1);
+        REQUIRE(floatTensor->numSizes == 1);
+
+        branchInner = makeBranchBranch(branchPtr, 0, 1);
+        REQUIRE(getBranchSize(branchInner) == 1);
+
+        intTensor = makeBranchIntTensor(
+            branchPtr, APPEND_INDEX, (NumSizes){2}, 1);
+        REQUIRE(intTensor->numSizes == 2);
+        REQUIRE(getBranchSize(branchPtr) == 2);
+        REQUIRE(getBranchIntTensor(branchPtr, 1) == intTensor);
+
+        floatTensor = makeBranchFloatTensor(
+            branchPtr, APPEND_INDEX, (NumSizes){2}, 1);
+        REQUIRE(floatTensor->numSizes == 2);
+        REQUIRE(getBranchSize(branchPtr) == 3);
+        REQUIRE(getBranchFloatTensor(branchPtr, 2) == floatTensor);
+
+        branchInner = makeBranchBranch(
+            branchPtr, APPEND_INDEX, 2);
+        REQUIRE(getBranchSize(branchInner) == 2);
+        REQUIRE(getBranchSize(branchPtr) == 4);
+        REQUIRE(getBranchBranch(branchPtr, 3) == branchInner);
+
+        popBranch(branchPtr);
+        REQUIRE(getBranchSize(branchPtr) == 3);
     }
 }
 
@@ -165,7 +204,7 @@ TEST_CASE("Access data block", "[native_interface]") {
         floatTensor = make_unique<FloatTensorObj>((NumSizes){3}, 1, 1, 1);
         floatTensor->getContents()[0] = 6.0f;
 
-        branch = make_unique<Branch>();
+        branch = make_unique<Branch>(0);
 
         block.setInput(0, std::move(intTensor));
         block.setInput(1, std::move(floatTensor));
@@ -202,7 +241,7 @@ TEST_CASE("Access data block", "[native_interface]") {
     SECTION("Create output values") {
         IntTensorStruct const *intTensor;
         FloatTensorStruct const *floatTensor;
-        Branch const *branch, *branchEmpty;
+        Branch *branch;
 
         intTensor = makeOutputIntTensor(blockPtr, 0, (NumSizes){1}, 1);
         REQUIRE(intTensor->numSizes == 1);

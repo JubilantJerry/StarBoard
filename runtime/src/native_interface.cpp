@@ -14,8 +14,9 @@ inline void IntTensorObj::fillSelf(
         NumSizes numSizesV, va_list sizesList) {
 
     numSizes = numSizesV.value;
-    sizes = new int[numSizes];
-    int totalSize = fillSizes(numSizes, sizesList, sizes);
+    int *sizesMutable = new int[numSizes];
+    int totalSize = fillSizes(numSizes, sizesList, sizesMutable);
+    sizes = sizesMutable;
     contents = new int[totalSize];
 }
 
@@ -40,8 +41,9 @@ inline void FloatTensorObj::fillSelf(
         NumSizes numSizesV, va_list sizesList) {
 
     numSizes = numSizesV.value;
-    sizes = new int[numSizes];
-    int totalSize = fillSizes(numSizes, sizesList, sizes);
+    int *sizesMutable = new int[numSizes];
+    int totalSize = fillSizes(numSizes, sizesList, sizesMutable);
+    sizes = sizesMutable;
     contents = new float[totalSize];
 }
 

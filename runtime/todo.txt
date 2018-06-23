@@ -1,13 +1,20 @@
 Stream of x + 1
 Call x + 1
-Load library
-Set up arguments
---- Create general integer tensor
---- Create 1D integer tensor
---- Create float tensor
-Create branch type
-Manager object
-Move data between inputs and outputs
-Attempt call from compiled C
---- Automatic memory management
-
+-- Load library
+Set up function calls with static helpers
+-- Create general integer tensor
+-- Create 1D integer tensor
+-- Create float tensor
+-- Create branch type
+-- Manager object
+-- Move data between inputs and outputs
+-- Branches can append
+-- Attempt call from compiled C
+-- Automatic memory management
+Modules with listeners
+Separate containers for message and continuous
+Continuous data
+Test with flip flop
+Callbacks
+Callback rate limiter
+Message wrappers

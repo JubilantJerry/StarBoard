@@ -61,7 +61,7 @@ public:
         return numSizes;
     }
 
-    int *getSizes() {
+    int const *getSizes() {
         return sizes;
     }
 
@@ -99,7 +99,7 @@ public:
         return numSizes;
     }
 
-    int *getSizes() noexcept {
+    int const *getSizes() noexcept {
         return sizes;
     }
 
@@ -132,17 +132,67 @@ private:
             branch->values[index].get());
     }
 
-    friend Branch const * getBranchBranch(
+    friend Branch * getBranchBranch(
             Branch const *branch, int index) {
 
-        return static_cast<Branch const *>(
+        return static_cast<Branch *>(
             branch->values[index].get());
     }
 
+    friend IntTensorStruct const * makeBranchIntTensor(
+            Branch *branch, int index, NumSizes numSizesV, ...) {
+
+        va_list sizesList;
+        va_start(sizesList, numSizesV);
+        DataPtr data = make_unique<IntTensorObj>(numSizesV, sizesList);
+        if (index == APPEND_INDEX) {
+            branch->values.push_back(std::move(data));
+            return static_cast<IntTensorObj const *>(
+                branch->values.back().get());
+        } else {
+            branch->values[index] = std::move(data);
+            return static_cast<IntTensorObj const *>(
+                branch->values[index].get());
+        }
+        va_end(sizesList);
+    }
+
+    friend FloatTensorStruct const * makeBranchFloatTensor(
+            Branch *branch, int index, NumSizes numSizesV, ...) {
+
+        va_list sizesList;
+        va_start(sizesList, numSizesV);
+        DataPtr data = make_unique<FloatTensorObj>(numSizesV, sizesList);
+        if (index == APPEND_INDEX) {
+            branch->values.push_back(std::move(data));
+            return static_cast<FloatTensorObj const *>(
+                branch->values.back().get());
+        } else {
+            branch->values[index] = std::move(data);
+            return static_cast<FloatTensorObj const *>(
+                branch->values[index].get());
+        }
+        va_end(sizesList);
+    }
+
+    friend Branch * makeBranchBranch(
+            Branch *branch, int index, int size) {
+
+        DataPtr data = make_unique<Branch>(size);
+        if (index == APPEND_INDEX) {
+            branch->values.push_back(std::move(data));
+            return static_cast<Branch *>(branch->values.back().get());
+        } else {
+            branch->values[index] = std::move(data);
+            return static_cast<Branch *>(branch->values[index].get());
+        }
+    }
+
+    friend void popBranch(Branch *branch) {
+        branch->values.pop_back();
+    }
 
 public:
-    Branch():  values(0) {}
-
     Branch(int size): values(size) {}
 
     void setValue(int index, DataPtr &&data) noexcept {
@@ -177,7 +227,7 @@ private:
 
     friend Branch const * getInputBranch(
             DataBlock const *block, int inPortNum) {
-        return static_cast<Branch const *>(
+        return static_cast<Branch *>(
             block->inputs[inPortNum].get());
     }
 
@@ -209,10 +259,10 @@ private:
             block->outputs[outPortNum].get());
     }
 
-    friend Branch const * makeOutputBranch(
+    friend Branch * makeOutputBranch(
             DataBlock *block, int outPortNum, int size) {
         block->outputs[outPortNum] = make_unique<Branch>(size);
-        return static_cast<Branch const *>(
+        return static_cast<Branch *>(
             block->outputs[outPortNum].get());
     }
 
@@ -230,10 +280,10 @@ private:
             block->outputs[outPortNum].get());
     }
 
-    friend Branch const * moveToOutputBranch(
+    friend Branch * moveToOutputBranch(
             DataBlock *block, int outPortNum, int inPortNum) {
         block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
-        return static_cast<Branch const *>(
+        return static_cast<Branch *>(
             block->outputs[outPortNum].get());
     }
 

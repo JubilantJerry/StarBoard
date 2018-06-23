@@ -16,13 +16,13 @@ typedef struct NumSizes {
 
 typedef struct IntTensorStruct {
     int numSizes;
-    int *sizes;
+    int const *sizes;
     int *contents;
 } IntTensorStruct;
 
 typedef struct FloatTensorStruct {
     int numSizes;
-    int *sizes;
+    int const *sizes;
     float *contents;
 } FloatTensorStruct;
 
@@ -49,7 +49,7 @@ IntTensorStruct const * makeOutputIntTensor(
 FloatTensorStruct const * makeOutputFloatTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-Branch const * makeOutputBranch(
+Branch * makeOutputBranch(
         DataBlock *block, int outPortNum, int size);
 
 IntTensorStruct const * moveToOutputIntTensor(
@@ -58,7 +58,7 @@ IntTensorStruct const * moveToOutputIntTensor(
 FloatTensorStruct const * moveToOutputFloatTensor(
         DataBlock *block, int outPortNum, int inPortNum);
 
-Branch const * moveToOutputBranch(
+Branch * moveToOutputBranch(
         DataBlock *block, int outPortNum, int inPortNum);
 
 int getBranchSize(Branch const *branch);
@@ -69,8 +69,21 @@ IntTensorStruct const * getBranchIntTensor(
 FloatTensorStruct const * getBranchFloatTensor(
         Branch const *branch, int index);
 
-Branch const * getBranchBranch(
+Branch * getBranchBranch(
         Branch const *branch, int index);
+
+#define APPEND_INDEX -1
+
+IntTensorStruct const * makeBranchIntTensor(
+        Branch *branch, int index, NumSizes numSizesV, ...);
+
+FloatTensorStruct const * makeBranchFloatTensor(
+        Branch *branch, int index, NumSizes numSizesV, ...);
+
+Branch * makeBranchBranch(
+        Branch *branch, int index, int size);
+
+void popBranch(Branch *branch);
 
 #define __INDEX_DISPATCH(_1, _2, _3, _4, _5, _6, _7, _8, target, ...) target
 
