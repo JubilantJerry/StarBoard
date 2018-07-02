@@ -1,89 +1,118 @@
-/** @file test_lib.hpp
- *  @brief A test header file
- */
-
 #ifndef NATIVE_INTERFACE_H
 #define NATIVE_INTERFACE_H
 
-#define INDEX(sizes, indices...) \
-    __INDEX_DISPATCH(indices, \
-        __INDEX_8, __INDEX_7, __INDEX_6, __INDEX_5, \
-        __INDEX_4, __INDEX_3, __INDEX_2, __INDEX_1)(sizes, indices)
+#define APPEND_INDEX -1
+
+/*** Type definitions ***/
 
 typedef struct NumSizes {
     int value;
 } NumSizes;
 
-typedef struct IntTensorStruct {
-    int numSizes;
-    int const *sizes;
-    int *contents;
-} IntTensorStruct;
-
-typedef struct FloatTensorStruct {
-    int numSizes;
-    int const *sizes;
-    float *contents;
-} FloatTensorStruct;
-
-typedef struct Branch Branch;
-
 typedef struct DataBlock DataBlock;
 
-int getNumInputs(DataBlock const *block);
+typedef struct IntTensorR {
+    int const numSizes;
+    int const * const sizes;
+    int const * const contents;
+} IntTensorR;
 
-IntTensorStruct const * getInputIntTensor(
-        DataBlock const *block, int inPortNum);
+typedef struct IntTensorRW {
+    int const numSizes;
+    int const * const sizes;
+    int * const contents;
+} IntTensorRW;
 
-FloatTensorStruct const * getInputFloatTensor(
-        DataBlock const *block, int inPortNum);
+typedef struct IntTensorM {
+    int numSizes;
+    int *sizes;
+    int *contents;
+} IntTensorM;
 
-Branch const * getInputBranch(
-        DataBlock const *block, int inPortNum);
+typedef struct FloatTensorR {
+    int const numSizes;
+    int const * const sizes;
+    float const * const contents;
+} FloatTensorR;
 
-int getNumOutputs(DataBlock const *block);
+typedef struct FloatTensorRW {
+    int const numSizes;
+    int const * const sizes;
+    float * const contents;
+} FloatTensorRW;
 
-IntTensorStruct const * makeOutputIntTensor(
+typedef struct FloatTensorM {
+    int numSizes;
+    int *sizes;
+    float *contents;
+} FloatTensorM;
+
+typedef struct BranchR BranchR;
+
+typedef struct BranchRW BranchRW;
+
+
+/*** System functions ***/
+
+int input_getNum(DataBlock *block);
+
+IntTensorR * input_getIntTensor(DataBlock *block, int inPortNum);
+
+FloatTensorR * input_getFloatTensor(DataBlock *block, int inPortNum);
+
+BranchR * input_getBranch(DataBlock *block, int inPortNum);
+
+int output_getNum(DataBlock *block);
+
+IntTensorRW * output_makeIntTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-FloatTensorStruct const * makeOutputFloatTensor(
+FloatTensorRW * output_makeFloatTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-Branch * makeOutputBranch(
+BranchRW * output_makeBranch(
         DataBlock *block, int outPortNum, int size);
 
-IntTensorStruct const * moveToOutputIntTensor(
+IntTensorRW * output_moveIntTensor(
         DataBlock *block, int outPortNum, int inPortNum);
 
-FloatTensorStruct const * moveToOutputFloatTensor(
+FloatTensorRW * output_moveFloatTensor(
         DataBlock *block, int outPortNum, int inPortNum);
 
-Branch * moveToOutputBranch(
+BranchRW * output_moveBranch(
         DataBlock *block, int outPortNum, int inPortNum);
 
-int getBranchSize(Branch const *branch);
+int branchR_getSize(BranchR *branch);
 
-IntTensorStruct const * getBranchIntTensor(
-        Branch const *branch, int index);
+int branchRW_getSize(BranchRW *branch);
 
-FloatTensorStruct const * getBranchFloatTensor(
-        Branch const *branch, int index);
+IntTensorR * branchR_getIntTensor(BranchR *branch, int index);
 
-Branch * getBranchBranch(
-        Branch const *branch, int index);
+IntTensorRW * branchRW_getIntTensor(BranchRW *branch, int index);
 
-#define APPEND_INDEX -1
+FloatTensorR * branchR_getFloatTensor(BranchR *branch, int index);
 
-IntTensorStruct const * makeBranchIntTensor(
-        Branch *branch, int index, NumSizes numSizesV, ...);
+FloatTensorRW * branchRW_getFloatTensor(BranchRW *branch, int index);
 
-FloatTensorStruct const * makeBranchFloatTensor(
-        Branch *branch, int index, NumSizes numSizesV, ...);
+BranchR * branchR_getBranch(BranchR *branch, int index);
 
-Branch * makeBranchBranch(
-        Branch *branch, int index, int size);
+BranchRW * branchRW_getBranch(BranchRW *branch, int index);
 
-void popBranch(Branch *branch);
+IntTensorRW * branchRW_makeIntTensor(
+        BranchRW *branch, int indexInclAppend, NumSizes numSizesV, ...);
+
+FloatTensorRW * branchRW_makeFloatTensor(
+        BranchRW *branch, int indexInclAppend, NumSizes numSizesV, ...);
+
+BranchRW * branchRW_makeBranch(
+        BranchRW *branch, int indexInclAppend, int size);
+
+void branchRW_pop(BranchRW *branch);
+
+#define INDEX(sizes, indices...) \
+    __INDEX_DISPATCH(indices, \
+        __INDEX_8, __INDEX_7, __INDEX_6, __INDEX_5, \
+        __INDEX_4, __INDEX_3, __INDEX_2, __INDEX_1)(sizes, indices)
 
 #define __INDEX_DISPATCH(_1, _2, _3, _4, _5, _6, _7, _8, target, ...) target
 

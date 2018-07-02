@@ -24,6 +24,8 @@ std::ostream& operator<<(
         ++start;
     }
     stream << "]";
+
+    return stream;
 }
 
 template<typename T>

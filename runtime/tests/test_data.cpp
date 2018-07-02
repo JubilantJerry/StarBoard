@@ -8,53 +8,64 @@
 TEST_CASE("Create integer tensor", "[native_interface]") {
     SECTION("Default construction") {
         IntTensorObj intTensor{};
-        REQUIRE(intTensor.getNumSizes() == 0);
+        REQUIRE(intTensor.numSizes() == 0);
     }
 
     SECTION("Size 2 tensor") {
         IntTensorObj intTensor{(NumSizes){1}, 2};
-        IntTensorStruct *intTensorStruct = &intTensor;
+        IntTensorR *intTensorR = &intTensor.getR();
+        IntTensorRW *intTensorRW = &intTensor.getRW();
 
         SECTION("Tensor check size") {
-            REQUIRE(intTensor.getNumSizes() == 1);
-            REQUIRE(intTensor.getSizes()[0] == 2);
-            REQUIRE(intTensorStruct->numSizes == 1);
-            REQUIRE(intTensorStruct->sizes[0] == 2);
+            REQUIRE(intTensor.numSizes() == 1);
+            REQUIRE(intTensor.sizes()[0] == 2);
+            REQUIRE(intTensorR->numSizes == 1);
+            REQUIRE(intTensorR->sizes[0] == 2);
+            REQUIRE(intTensorRW->numSizes == 1);
+            REQUIRE(intTensorRW->sizes[0] == 2);
         }
 
         SECTION("Write & read") {
-            int *d = intTensorStruct->contents;
-            d[0] = 5;
-            d[1] = 6;
-            REQUIRE(d[0] == 5);
-            REQUIRE(d[1] == 6);
+            int *rw = intTensorRW->contents;
+            rw[0] = 5;
+            rw[1] = 6;
+
+            int const *r = intTensorR->contents;
+            REQUIRE(r[0] == 5);
+            REQUIRE(r[1] == 6);
         }
     }
 
     SECTION("Size (2, 3) tensor") {
         IntTensorObj intTensor{(NumSizes){2}, 2, 3};
-        IntTensorStruct *intTensorStruct = &intTensor;
+        IntTensorR *intTensorR = &intTensor.getR();
+        IntTensorRW *intTensorRW = &intTensor.getRW();
 
         SECTION("Tensor check size") {
-            REQUIRE(intTensor.getNumSizes() == 2);
-            REQUIRE(intTensor.getSizes()[0] == 2);
-            REQUIRE(intTensor.getSizes()[1] == 3);
-            REQUIRE(intTensorStruct->numSizes == 2);
-            REQUIRE(intTensorStruct->sizes[0] == 2);
-            REQUIRE(intTensorStruct->sizes[1] == 3);
+            REQUIRE(intTensor.numSizes() == 2);
+            REQUIRE(intTensor.sizes()[0] == 2);
+            REQUIRE(intTensor.sizes()[1] == 3);
+            REQUIRE(intTensorR->numSizes == 2);
+            REQUIRE(intTensorR->sizes[0] == 2);
+            REQUIRE(intTensorR->sizes[1] == 3);
+            REQUIRE(intTensorRW->numSizes == 2);
+            REQUIRE(intTensorRW->sizes[0] == 2);
+            REQUIRE(intTensorRW->sizes[1] == 3);
         }
 
         SECTION("Write & read") {
-            int const *s = intTensorStruct->sizes;
-            int *d = intTensorStruct->contents;
-            d[INDEX(s, 0, 0)] = 0;
-            d[INDEX(s, 0, 1)] = 1;
-            d[INDEX(s, 0, 2)] = 2;
-            d[INDEX(s, 1, 0)] = 3;
-            d[INDEX(s, 1, 1)] = 4;
-            d[INDEX(s, 1, 2)] = 5;
+            int const *s = intTensorRW->sizes;
+            int *rw = intTensorRW->contents;
+            rw[INDEX(s, 0, 0)] = 0;
+            rw[INDEX(s, 0, 1)] = 1;
+            rw[INDEX(s, 0, 2)] = 2;
+            rw[INDEX(s, 1, 0)] = 3;
+            rw[INDEX(s, 1, 1)] = 4;
+            rw[INDEX(s, 1, 2)] = 5;
+
+            int const *r = intTensorR->contents;
             for (int i = 0; i < 6; i++) {
-                REQUIRE(d[i] == i);
+                REQUIRE(r[i] == i);
             }
         }
     }
@@ -63,37 +74,44 @@ TEST_CASE("Create integer tensor", "[native_interface]") {
 TEST_CASE("Create float tensor", "[native_interface]") {
     SECTION("Default construction") {
         FloatTensorObj floatTensor{};
-        REQUIRE(floatTensor.getNumSizes() == 0);
+        REQUIRE(floatTensor.numSizes() == 0);
     }
 
     SECTION("Size (2, 2, 2) tensor") {
         FloatTensorObj floatTensor{(NumSizes){3}, 2, 2, 2};
-        FloatTensorStruct *floatTensorStruct = &floatTensor;
+        FloatTensorR *floatTensorR = &floatTensor.getR();
+        FloatTensorRW *floatTensorRW = &floatTensor.getRW();
 
         SECTION("Tensor check size") {
-            REQUIRE(floatTensor.getNumSizes() == 3);
-            REQUIRE(floatTensor.getSizes()[0] == 2);
-            REQUIRE(floatTensor.getSizes()[1] == 2);
-            REQUIRE(floatTensor.getSizes()[2] == 2);
-            REQUIRE(floatTensorStruct->numSizes == 3);
-            REQUIRE(floatTensorStruct->sizes[0] == 2);
-            REQUIRE(floatTensorStruct->sizes[1] == 2);
-            REQUIRE(floatTensorStruct->sizes[2] == 2);
+            REQUIRE(floatTensor.numSizes() == 3);
+            REQUIRE(floatTensor.sizes()[0] == 2);
+            REQUIRE(floatTensor.sizes()[1] == 2);
+            REQUIRE(floatTensor.sizes()[2] == 2);
+            REQUIRE(floatTensorR->numSizes == 3);
+            REQUIRE(floatTensorR->sizes[0] == 2);
+            REQUIRE(floatTensorR->sizes[1] == 2);
+            REQUIRE(floatTensorR->sizes[2] == 2);
+            REQUIRE(floatTensorRW->numSizes == 3);
+            REQUIRE(floatTensorRW->sizes[0] == 2);
+            REQUIRE(floatTensorRW->sizes[1] == 2);
+            REQUIRE(floatTensorRW->sizes[2] == 2);
         }
 
         SECTION("Write & read") {
-            int const *s = floatTensorStruct->sizes;
-            float *d = floatTensorStruct->contents;
-            d[INDEX(s, 0, 0, 0)] = 0.0f;
-            d[INDEX(s, 0, 0, 1)] = 0.1f;
-            d[INDEX(s, 0, 1, 0)] = 0.2f;
-            d[INDEX(s, 0, 1, 1)] = 0.3f;
-            d[INDEX(s, 1, 0, 0)] = 0.4f;
-            d[INDEX(s, 1, 0, 1)] = 0.5f;
-            d[INDEX(s, 1, 1, 0)] = 0.6f;
-            d[INDEX(s, 1, 1, 1)] = 0.7f;
+            int const *s = floatTensorRW->sizes;
+            float *rw = floatTensorRW->contents;
+            rw[INDEX(s, 0, 0, 0)] = 0.0f;
+            rw[INDEX(s, 0, 0, 1)] = 0.1f;
+            rw[INDEX(s, 0, 1, 0)] = 0.2f;
+            rw[INDEX(s, 0, 1, 1)] = 0.3f;
+            rw[INDEX(s, 1, 0, 0)] = 0.4f;
+            rw[INDEX(s, 1, 0, 1)] = 0.5f;
+            rw[INDEX(s, 1, 1, 0)] = 0.6f;
+            rw[INDEX(s, 1, 1, 1)] = 0.7f;
+
+            float const *r = floatTensorR->contents;
             for (int i = 0; i < 8; i++) {
-                REQUIRE(d[i] == (float) i / 10);
+                REQUIRE(r[i] == (float) i / 10);
             }
         }
     }
@@ -101,14 +119,19 @@ TEST_CASE("Create float tensor", "[native_interface]") {
 
 TEST_CASE("Create branches", "[native_interface]") {
     SECTION("Empty branch") {
-        Branch empty{0};
-        REQUIRE(empty.getSize() == 0);
-        REQUIRE(getBranchSize(&empty) == 0);
+        BranchObj empty{0};
+        BranchR *branchR = &empty;
+        BranchRW *branchRW = &empty;
+
+        REQUIRE(empty.size() == 0);
+        REQUIRE(branchR_getSize(branchR) == 0);
+        REQUIRE(branchRW_getSize(branchRW) == 0);
     }
 
     SECTION("Int / Float tuple as a branch") {
-        Branch branch{2};
-        Branch *branchPtr;
+        BranchObj branch{2};
+        BranchR *branchR;
+        BranchRW *branchRW;
 
         {
             std::unique_ptr<IntTensorObj> intScalar;
@@ -117,76 +140,103 @@ TEST_CASE("Create branches", "[native_interface]") {
             intScalar = make_unique<IntTensorObj>((NumSizes){1}, 1);
             floatScalar = make_unique<FloatTensorObj>((NumSizes){1}, 1);
 
-            intScalar->getContents()[0] = 5;
-            floatScalar->getContents()[0] = 6.0f;
+            intScalar->contents()[0] = 5;
+            floatScalar->contents()[0] = 6.0f;
 
             branch.setValue(0, std::move(intScalar));
             branch.setValue(1, std::move(floatScalar));
-            branchPtr = &branch;
+
+            branchR = &branch;
+            branchRW = &branch;
         }
 
-        IntTensorStruct const *intScalar;
-        FloatTensorStruct const *floatScalar;
+        SECTION("Accessing via BranchR") {
+            IntTensorR *intScalar;
+            FloatTensorR *floatScalar;
 
-        intScalar = getBranchIntTensor(branchPtr, 0);
-        floatScalar = getBranchFloatTensor(branchPtr, 1);
+            intScalar = branchR_getIntTensor(branchR, 0);
+            floatScalar = branchR_getFloatTensor(branchR, 1);
 
-        REQUIRE(intScalar->contents[0] == 5);
-        REQUIRE(floatScalar->contents[0] == 6.0f);
+            REQUIRE(intScalar->contents[0] == 5);
+            REQUIRE(floatScalar->contents[0] == 6.0f);
+        }
+        
+        SECTION("Accessing via BranchRW") {
+            IntTensorRW *intScalar;
+            FloatTensorRW *floatScalar;
+
+            intScalar = branchRW_getIntTensor(branchRW, 0);
+            floatScalar = branchRW_getFloatTensor(branchRW, 1);
+
+            intScalar->contents[0] = 4;
+            floatScalar->contents[0] = 5.0f;
+
+            REQUIRE(intScalar->contents[0] == 4);
+            REQUIRE(floatScalar->contents[0] == 5.0f);
+        }
     }
 
-    SECTION("Branch containing empty branch") {
-        Branch branch{2};
-        Branch *branchPtr;
+    SECTION("BranchObj containing empty branch") {
+        BranchObj branch{2};
+        BranchR *branchR;
+        BranchRW *branchRW;
 
         {
-            std::unique_ptr<Branch> branchEmpty = make_unique<Branch>(0);
+            std::unique_ptr<BranchObj> branchEmpty = make_unique<BranchObj>(0);
 
             branch.setValue(0, std::move(branchEmpty));
-            branchPtr = &branch;
+            branchR = &branch;
+            branchRW = &branch;
         }
 
-        Branch *branchEmpty = getBranchBranch(branchPtr, 0);
-        REQUIRE(getBranchSize(branchEmpty) == 0);
+        SECTION("Accessing via BranchR") {
+            BranchR *branchEmpty = branchR_getBranch(branchR, 0);
+            REQUIRE(branchR_getSize(branchEmpty) == 0);
+        }
+
+        SECTION("Accessing via BranchRW") {
+            BranchRW *branchEmpty = branchRW_getBranch(branchRW, 0);
+            REQUIRE(branchRW_getSize(branchEmpty) == 0);
+        }
     }
 
     SECTION("Modifying branches") {
-        Branch branch{1};
-        Branch *branchPtr = &branch;
+        BranchObj branch{1};
+        BranchRW *branchRW = &branch;
 
-        IntTensorStruct const *intTensor;
-        FloatTensorStruct const *floatTensor;
-        Branch *branchInner;
+        IntTensorRW *intTensor;
+        FloatTensorRW *floatTensor;
+        BranchRW *branchInner;
 
-        intTensor = makeBranchIntTensor(branchPtr, 0, (NumSizes){1}, 1);
+        intTensor = branchRW_makeIntTensor(branchRW, 0, (NumSizes){1}, 1);
         REQUIRE(intTensor->numSizes == 1);
 
-        floatTensor = makeBranchFloatTensor(branchPtr, 0, (NumSizes){1}, 1);
+        floatTensor = branchRW_makeFloatTensor(branchRW, 0, (NumSizes){1}, 1);
         REQUIRE(floatTensor->numSizes == 1);
 
-        branchInner = makeBranchBranch(branchPtr, 0, 1);
-        REQUIRE(getBranchSize(branchInner) == 1);
+        branchInner = branchRW_makeBranch(branchRW, 0, 1);
+        REQUIRE(branchRW_getSize(branchInner) == 1);
 
-        intTensor = makeBranchIntTensor(
-            branchPtr, APPEND_INDEX, (NumSizes){2}, 1);
+        intTensor = branchRW_makeIntTensor(
+            branchRW, APPEND_INDEX, (NumSizes){2}, 1, 1);
         REQUIRE(intTensor->numSizes == 2);
-        REQUIRE(getBranchSize(branchPtr) == 2);
-        REQUIRE(getBranchIntTensor(branchPtr, 1) == intTensor);
+        REQUIRE(branchRW_getSize(branchRW) == 2);
+        REQUIRE(branchRW_getIntTensor(branchRW, 1) == intTensor);
 
-        floatTensor = makeBranchFloatTensor(
-            branchPtr, APPEND_INDEX, (NumSizes){2}, 1);
+        floatTensor = branchRW_makeFloatTensor(
+            branchRW, APPEND_INDEX, (NumSizes){2}, 1, 1);
         REQUIRE(floatTensor->numSizes == 2);
-        REQUIRE(getBranchSize(branchPtr) == 3);
-        REQUIRE(getBranchFloatTensor(branchPtr, 2) == floatTensor);
+        REQUIRE(branchRW_getSize(branchRW) == 3);
+        REQUIRE(branchRW_getFloatTensor(branchRW, 2) == floatTensor);
 
-        branchInner = makeBranchBranch(
-            branchPtr, APPEND_INDEX, 2);
-        REQUIRE(getBranchSize(branchInner) == 2);
-        REQUIRE(getBranchSize(branchPtr) == 4);
-        REQUIRE(getBranchBranch(branchPtr, 3) == branchInner);
+        branchInner = branchRW_makeBranch(
+            branchRW, APPEND_INDEX, 2);
+        REQUIRE(branchRW_getSize(branchInner) == 2);
+        REQUIRE(branchRW_getSize(branchRW) == 4);
+        REQUIRE(branchRW_getBranch(branchRW, 3) == branchInner);
 
-        popBranch(branchPtr);
-        REQUIRE(getBranchSize(branchPtr) == 3);
+        branchRW_pop(branchRW);
+        REQUIRE(branchRW_getSize(branchRW) == 3);
     }
 }
 
@@ -197,14 +247,15 @@ TEST_CASE("Access data block", "[native_interface]") {
     {
         std::unique_ptr<IntTensorObj> intTensor;
         std::unique_ptr<FloatTensorObj> floatTensor;
-        std::unique_ptr<Branch> branch;
+        std::unique_ptr<BranchObj> branch;
 
         intTensor = make_unique<IntTensorObj>((NumSizes){2}, 1, 1);
+        intTensor->contents()[0] = 5;
 
         floatTensor = make_unique<FloatTensorObj>((NumSizes){3}, 1, 1, 1);
-        floatTensor->getContents()[0] = 6.0f;
+        floatTensor->contents()[0] = 6.0f;
 
-        branch = make_unique<Branch>(0);
+        branch = make_unique<BranchObj>(0);
 
         block.setInput(0, std::move(intTensor));
         block.setInput(1, std::move(floatTensor));
@@ -214,54 +265,50 @@ TEST_CASE("Access data block", "[native_interface]") {
     }
 
     SECTION("Access block properties") {
-        REQUIRE(getNumInputs(blockPtr) == 3);
-        REQUIRE(getNumOutputs(blockPtr) == 1);
+        REQUIRE(input_getNum(blockPtr) == 3);
+        REQUIRE(output_getNum(blockPtr) == 1);
     }
 
     SECTION("Access input values") {
-        IntTensorStruct const *intTensor;
-        FloatTensorStruct const *floatTensor;
-        Branch const *branch;
+        IntTensorR *intTensor;
+        FloatTensorR *floatTensor;
+        BranchR *branch;
 
-        intTensor = getInputIntTensor(blockPtr, 0);
+        intTensor = input_getIntTensor(blockPtr, 0);
         REQUIRE(intTensor->numSizes == 2);
         REQUIRE(intTensor->sizes[0] == 1);
 
-        intTensor->contents[0] = 5;
-        intTensor = getInputIntTensor(blockPtr, 0);
+        intTensor = input_getIntTensor(blockPtr, 0);
         REQUIRE(intTensor->contents[0] == 5);
 
-        floatTensor = getInputFloatTensor(blockPtr, 1);
+        floatTensor = input_getFloatTensor(blockPtr, 1);
         REQUIRE(floatTensor->contents[0] == 6.0f);
 
-        branch = getInputBranch(blockPtr, 2);
-        REQUIRE(getBranchSize(branch) == 0);
+        branch = input_getBranch(blockPtr, 2);
+        REQUIRE(branchR_getSize(branch) == 0);
     }
 
     SECTION("Create output values") {
-        IntTensorStruct const *intTensor;
-        FloatTensorStruct const *floatTensor;
-        Branch *branch;
+        IntTensorRW *intTensor;
+        FloatTensorRW *floatTensor;
+        BranchRW *branch;
 
-        intTensor = makeOutputIntTensor(blockPtr, 0, (NumSizes){1}, 1);
+        intTensor = output_makeIntTensor(blockPtr, 0, (NumSizes){1}, 1);
         REQUIRE(intTensor->numSizes == 1);
 
-        floatTensor = makeOutputFloatTensor(blockPtr, 0, (NumSizes){1}, 1);
+        floatTensor = output_makeFloatTensor(blockPtr, 0, (NumSizes){1}, 1);
         REQUIRE(floatTensor->numSizes == 1);
 
-        branch = makeOutputBranch(blockPtr, 0, 1);
-        REQUIRE(getBranchSize(branch) == 1);
+        branch = output_makeBranch(blockPtr, 0, 1);
+        REQUIRE(branchRW_getSize(branch) == 1);
 
-        intTensor = moveToOutputIntTensor(blockPtr, 0, 0);
+        intTensor = output_moveIntTensor(blockPtr, 0, 0);
         REQUIRE(intTensor->numSizes == 2);
 
-        floatTensor = moveToOutputFloatTensor(blockPtr, 0, 1);
+        floatTensor = output_moveFloatTensor(blockPtr, 0, 1);
         REQUIRE(floatTensor->numSizes == 3);
 
-        branch = moveToOutputBranch(blockPtr, 0, 2);
-        REQUIRE(getBranchSize(branch) == 0);
-
-        Branch *branchObj = (Branch *)block.takeOutput(0).get();
-        REQUIRE(branchObj->getSize() == 0);
+        branch = output_moveBranch(blockPtr, 0, 2);
+        REQUIRE(branchRW_getSize(branch) == 0);
     }
 }

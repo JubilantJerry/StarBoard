@@ -3,8 +3,16 @@ project(StarBoard_RTS_tests VERSION 0.1.0 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(add_one MODULE add_one.c)
 
-add_executable(tests test_main.cpp test_data.cpp test_foreign_call.cpp)
-target_link_libraries(tests native_interface native_loader ${CMAKE_DL_LIBS})
+add_executable(tests test_main.cpp
+    test_data.cpp
+    test_foreign_call.cpp
+    test_module_port_scheduler.cpp)
+target_link_libraries(tests
+    native_interface
+    native_loader
+    module_port_scheduler
+    ${CMAKE_DL_LIBS})

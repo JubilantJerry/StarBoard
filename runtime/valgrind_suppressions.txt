@@ -10,3 +10,10 @@
    obj:/lib/x86_64-linux-gnu/ld-2.23.so
 }
 
+{
+   <Boost pool allocator memory>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:*boost*fast_pool_allocator*default_user_allocator_new_delete*
+}

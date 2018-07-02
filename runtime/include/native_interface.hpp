@@ -33,277 +33,200 @@ public:
 
 using DataPtr = std::unique_ptr<Data>;
 
-class IntTensorObj final: public IntTensorStruct, public Data {
+class IntTensorObj final: public Data {
 private:
-    using IntTensorStruct::numSizes;
-    using IntTensorStruct::sizes;
-    using IntTensorStruct::contents;
+    union PayloadUnion {
+        IntTensorR r;
+        IntTensorRW rw;
+        IntTensorM m;
+
+        PayloadUnion() {
+            m.numSizes = 0;
+            m.sizes = nullptr;
+            m.contents = nullptr;
+        }
+    } payload_;
 
     void fillSelf(NumSizes numSizesV, va_list args);
 
     std::ostream& print(std::ostream &stream) const override;
 
 public:
-    IntTensorObj() noexcept {
-        numSizes = 0;
-        sizes = nullptr;
-        contents = nullptr;
-    };
+    IntTensorObj() noexcept {};
     IntTensorObj(NumSizes numSizesV, ...);
     IntTensorObj(NumSizes numSizesV, va_list args);
 
     ~IntTensorObj() noexcept {
-        delete[] sizes;
-        delete[] contents;
+        delete[] payload_.m.sizes;
+        delete[] payload_.m.contents;
     }
 
-    int getNumSizes() {
-        return numSizes;
+    int numSizes() {
+        return payload_.m.numSizes;
     }
 
-    int const *getSizes() {
-        return sizes;
+    int const *sizes() {
+        return payload_.m.sizes;
     }
 
-    int *getContents() {
-        return contents;
+    int *contents() {
+        return payload_.m.contents;
+    }
+
+    IntTensorR &getR() {
+        return payload_.r;
+    }
+
+    IntTensorRW &getRW() {
+        return payload_.rw;
     }
 };
 
-class FloatTensorObj final: public FloatTensorStruct, public Data {
+class FloatTensorObj final: public Data {
 private:
-    using FloatTensorStruct::numSizes;
-    using FloatTensorStruct::sizes;
-    using FloatTensorStruct::contents;
+    union PayloadUnion {
+        FloatTensorR r;
+        FloatTensorRW rw;
+        FloatTensorM m;
+
+        PayloadUnion() {
+            m.numSizes = 0;
+            m.sizes = nullptr;
+            m.contents = nullptr;
+        }
+    } payload_;
 
     void fillSelf(NumSizes numSizesV, va_list args);
 
     std::ostream& print(std::ostream &stream) const override;
 
 public:
-    FloatTensorObj() noexcept {
-        numSizes = 0;
-        sizes = nullptr;
-        contents = nullptr;
-    };
-
+    FloatTensorObj() noexcept {};
     FloatTensorObj(NumSizes numSizesV, ...);
-    FloatTensorObj(NumSizes numSizesV, va_list sizesList);
+    FloatTensorObj(NumSizes numSizesV, va_list args);
 
     ~FloatTensorObj() noexcept {
-        delete[] sizes;
-        delete[] contents;
+        delete[] payload_.m.sizes;
+        delete[] payload_.m.contents;
     }
 
-    int getNumSizes() noexcept {
-        return numSizes;
+    int numSizes() {
+        return payload_.m.numSizes;
     }
 
-    int const *getSizes() noexcept {
-        return sizes;
+    int const *sizes() {
+        return payload_.m.sizes;
     }
 
-    float *getContents() noexcept {
-        return contents;
+    float *contents() {
+        return payload_.m.contents;
+    }
+
+    FloatTensorR &getR() {
+        return payload_.r;
+    }
+
+    FloatTensorRW &getRW() {
+        return payload_.rw;
     }
 };
 
-class Branch final: public Data {
+struct BranchR {};
+
+struct BranchRW {};
+
+class BranchObj final: public BranchR, public BranchRW, public Data {
 private:
-    std::vector<DataPtr> values;
+    std::vector<DataPtr> values_;
 
     std::ostream& print(std::ostream &stream) const override;
 
-    friend int getBranchSize(Branch const *branch) {
-        return branch->getSize();
-    }
+    friend IntTensorR * branchR_getIntTensor(BranchR *branch, int index);
 
-    friend IntTensorStruct const * getBranchIntTensor(
-            Branch const *branch, int index) {
+    friend IntTensorRW * branchRW_getIntTensor(BranchRW *branch, int index);
 
-        return static_cast<IntTensorObj const *>(
-            branch->values[index].get());
-    }
+    friend FloatTensorR * branchR_getFloatTensor(BranchR *branch, int index);
 
-    friend FloatTensorStruct const * getBranchFloatTensor(
-            Branch const *branch, int index) {
+    friend FloatTensorRW * branchRW_getFloatTensor(BranchRW *branch, int index);
 
-        return static_cast<FloatTensorObj const *>(
-            branch->values[index].get());
-    }
+    friend BranchR * branchR_getBranch(BranchR *branch, int index);
 
-    friend Branch * getBranchBranch(
-            Branch const *branch, int index) {
+    friend BranchRW * branchRW_getBranch(BranchRW *branch, int index);
 
-        return static_cast<Branch *>(
-            branch->values[index].get());
-    }
+    friend IntTensorRW * branchRW_makeIntTensor(
+            BranchRW *branch, int indexInclAppend, NumSizes numSizesV, ...);
 
-    friend IntTensorStruct const * makeBranchIntTensor(
-            Branch *branch, int index, NumSizes numSizesV, ...) {
+    friend FloatTensorRW * branchRW_makeFloatTensor(
+            BranchRW *branch, int indexInclAppend, NumSizes numSizesV, ...);
 
-        va_list sizesList;
-        va_start(sizesList, numSizesV);
-        DataPtr data = make_unique<IntTensorObj>(numSizesV, sizesList);
-        if (index == APPEND_INDEX) {
-            branch->values.push_back(std::move(data));
-            return static_cast<IntTensorObj const *>(
-                branch->values.back().get());
-        } else {
-            branch->values[index] = std::move(data);
-            return static_cast<IntTensorObj const *>(
-                branch->values[index].get());
-        }
-        va_end(sizesList);
-    }
+    friend BranchRW * branchRW_makeBranch(
+            BranchRW *branch, int indexInclAppend, int size);
 
-    friend FloatTensorStruct const * makeBranchFloatTensor(
-            Branch *branch, int index, NumSizes numSizesV, ...) {
-
-        va_list sizesList;
-        va_start(sizesList, numSizesV);
-        DataPtr data = make_unique<FloatTensorObj>(numSizesV, sizesList);
-        if (index == APPEND_INDEX) {
-            branch->values.push_back(std::move(data));
-            return static_cast<FloatTensorObj const *>(
-                branch->values.back().get());
-        } else {
-            branch->values[index] = std::move(data);
-            return static_cast<FloatTensorObj const *>(
-                branch->values[index].get());
-        }
-        va_end(sizesList);
-    }
-
-    friend Branch * makeBranchBranch(
-            Branch *branch, int index, int size) {
-
-        DataPtr data = make_unique<Branch>(size);
-        if (index == APPEND_INDEX) {
-            branch->values.push_back(std::move(data));
-            return static_cast<Branch *>(branch->values.back().get());
-        } else {
-            branch->values[index] = std::move(data);
-            return static_cast<Branch *>(branch->values[index].get());
-        }
-    }
-
-    friend void popBranch(Branch *branch) {
-        branch->values.pop_back();
-    }
+    friend void branchRW_pop(BranchRW *branch);
 
 public:
-    Branch(int size): values(size) {}
+    BranchObj(int size): values_(size) {}
 
     void setValue(int index, DataPtr &&data) noexcept {
-        values[index] = std::move(data);
+        values_[index] = std::move(data);
     }
 
-    int getSize() const noexcept {
-        return values.size();
+    int size() const noexcept {
+        return values_.size();
     }
 };
 
+
+
+
 class DataBlock final {
 private:
-    std::vector<DataPtr> inputs;
-    std::vector<DataPtr> outputs;
+    std::vector<DataPtr> inputs_;
+    std::vector<DataPtr> outputs_;
 
-    friend int getNumInputs(DataBlock const *block) {
-        return block->getNumInputs();
-    }
+    friend IntTensorR * input_getIntTensor(
+            DataBlock *block, int inPortNum);
 
-    friend IntTensorStruct const * getInputIntTensor(
-            DataBlock const *block, int inPortNum) {
-        return static_cast<IntTensorObj const *>(
-            block->inputs[inPortNum].get());
-    }
+    friend FloatTensorR * input_getFloatTensor(
+            DataBlock *block, int inPortNum);
 
-    friend FloatTensorStruct const * getInputFloatTensor(
-            DataBlock const *block, int inPortNum) {
-        return static_cast<FloatTensorObj const *>(
-            block->inputs[inPortNum].get());
-    }
+    friend BranchR * input_getBranch(DataBlock *block, int inPortNum);
 
-    friend Branch const * getInputBranch(
-            DataBlock const *block, int inPortNum) {
-        return static_cast<Branch *>(
-            block->inputs[inPortNum].get());
-    }
+    friend IntTensorRW * output_makeIntTensor(
+        DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-    friend int getNumOutputs(DataBlock const *block) {
-        return block->getNumOutputs();
-    }
+    friend FloatTensorRW * output_makeFloatTensor(
+        DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-    friend IntTensorStruct const * makeOutputIntTensor(
-            DataBlock *block, int outPortNum,
-            NumSizes numSizesV, ...) {
-        va_list sizesList;
-        va_start(sizesList, numSizesV);
-        block->outputs[outPortNum] =
-            make_unique<IntTensorObj>(numSizesV, sizesList);
-        va_end(sizesList);
-        return static_cast<IntTensorObj const *>(
-            block->outputs[outPortNum].get());
-    }
+    friend BranchRW * output_makeBranch(
+        DataBlock *block, int outPortNum, int size);
 
-    friend FloatTensorStruct const * makeOutputFloatTensor(
-            DataBlock *block, int outPortNum,
-            NumSizes numSizesV, ...) {
-        va_list sizesList;
-        va_start(sizesList, numSizesV);
-        block->outputs[outPortNum] =
-            make_unique<FloatTensorObj>(numSizesV, sizesList);
-        va_end(sizesList);
-        return static_cast<FloatTensorObj const *>(
-            block->outputs[outPortNum].get());
-    }
+    friend IntTensorRW * output_moveIntTensor(
+        DataBlock *block, int outPortNum, int inPortNum);
 
-    friend Branch * makeOutputBranch(
-            DataBlock *block, int outPortNum, int size) {
-        block->outputs[outPortNum] = make_unique<Branch>(size);
-        return static_cast<Branch *>(
-            block->outputs[outPortNum].get());
-    }
+    friend FloatTensorRW * output_moveFloatTensor(
+        DataBlock *block, int outPortNum, int inPortNum);
 
-    friend IntTensorStruct const * moveToOutputIntTensor(
-            DataBlock *block, int outPortNum, int inPortNum) {
-        block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
-        return static_cast<IntTensorObj const *>(
-            block->outputs[outPortNum].get());
-    }
-
-    friend FloatTensorStruct const * moveToOutputFloatTensor(
-            DataBlock *block, int outPortNum, int inPortNum) {
-        block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
-        return static_cast<FloatTensorObj const *>(
-            block->outputs[outPortNum].get());
-    }
-
-    friend Branch * moveToOutputBranch(
-            DataBlock *block, int outPortNum, int inPortNum) {
-        block->outputs[outPortNum] = std::move(block->inputs[inPortNum]);
-        return static_cast<Branch *>(
-            block->outputs[outPortNum].get());
-    }
+    friend BranchRW * output_moveBranch(
+        DataBlock *block, int outPortNum, int inPortNum);
 
 public:
     DataBlock(int numInputs, int numStateData, int numOutputs);
 
-    int getNumInputs() const noexcept {
-        return inputs.size();
+    int numInputs() const noexcept {
+        return inputs_.size();
     }
 
-    int getNumOutputs() const noexcept {
-        return outputs.size();
+    int numOutputs() const noexcept {
+        return outputs_.size();
     }
 
     void setInput(int inPortNum, DataPtr &&data) noexcept {
-        inputs[inPortNum] = std::move(data);
+        inputs_[inPortNum] = std::move(data);
     }
 
     DataPtr && takeOutput(int outPortNum) noexcept {
-        return std::move(outputs[outPortNum]);
+        return std::move(outputs_[outPortNum]);
     }
 };
 

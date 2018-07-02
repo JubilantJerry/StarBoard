@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -z "$BOOST_ROOT" ]; then
+    export BOOST_ROOT=/usr/local/boost_1_67_0
+fi
+
 build() {
     mkdir -p build &&
     cd build &&
@@ -19,7 +23,7 @@ clean() {
 }
 
 run_tests() {
-    valgrind --leak-check=full --show-reachable=yes --show-leak-kinds=none\
+    valgrind --leak-check=full --show-reachable=yes\
              --suppressions=valgrind_suppressions.txt build/bin/tests;
 }
 
