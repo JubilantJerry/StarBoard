@@ -1,6 +1,7 @@
 # Project specific #
 ######################
 runtime/build/*
+docs/.~*.docx
 
 # Compiled source #
 ###################

@@ -1,20 +1,34 @@
-Stream of x + 1
-Call x + 1
--- Load library
-Set up function calls with static helpers
--- Create general integer tensor
--- Create 1D integer tensor
--- Create float tensor
--- Create branch type
--- Manager object
--- Move data between inputs and outputs
--- Branches can append
--- Attempt call from compiled C
--- Automatic memory management
-Modules with listeners
-Separate containers for message and continuous
-Continuous data
-Test with flip flop
-Callbacks
-Callback rate limiter
-Message wrappers
+Touch up native interface for single message port
+Implement message block queues
+Implement modules, and polymorphic data handlers in the modules
+Define specification format for module connections
+Define basic network protocol
+Create internal format for module specification
+Implement worker, then the threads that run in it
+Test with stream of +1
+Test dropping with slow ops
+Create double buffering structure for continuous ports
+Add continuous ports to data block
+Define specification format for module sensitivity to continuous port changes
+Test with combinational logic
+Add state to data block
+Add specification format for state dependencies
+Test with sequential logic
+Add call stack for message data
+Add interface for specifying newly created messages vs. forwarded messages
+Define specification for callback destination of ports
+Implement callback store and rate limiting
+Add interface for entrusting & restoring callback information
+Test with tuple of fast and slow ops
+Add specification for calling by module port number, and outputting to caller
+Add interface for getting the module port number
+Test using two different ops depending on data
+Add data handler for foreign modules
+Test two ops in separate processes
+Add data handler for different language implementation
+Create basic Python module environment
+Test op defined in Python
+Implement multithreaded worker
+Test multithreaded +1 with spin inside
+Create textual format for module specification
+
