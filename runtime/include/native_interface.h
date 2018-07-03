@@ -63,33 +63,33 @@ typedef struct BranchRW BranchRW;
 
 /*** System functions ***/
 
-int input_getNum(DataBlock *block);
+int inputMsg_getNum(DataBlock *block);
 
-IntTensorR * input_getIntTensor(DataBlock *block, int inPortNum);
+IntTensorR * inputMsg_getIntTensor(DataBlock *block);
 
-FloatTensorR * input_getFloatTensor(DataBlock *block, int inPortNum);
+FloatTensorR * inputMsg_getFloatTensor(DataBlock *block);
 
-BranchR * input_getBranch(DataBlock *block, int inPortNum);
+BranchR * inputMsg_getBranch(DataBlock *block);
 
-int output_getNum(DataBlock *block);
+int outputMsg_getNum(DataBlock *block);
 
-IntTensorRW * output_makeIntTensor(
+IntTensorRW * outputMsg_makeIntTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-FloatTensorRW * output_makeFloatTensor(
+FloatTensorRW * outputMsg_makeFloatTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-BranchRW * output_makeBranch(
+BranchRW * outputMsg_makeBranch(
         DataBlock *block, int outPortNum, int size);
 
-IntTensorRW * output_moveIntTensor(
-        DataBlock *block, int outPortNum, int inPortNum);
+IntTensorRW * outputMsg_moveIntTensor(
+        DataBlock *block, int outPortNum);
 
-FloatTensorRW * output_moveFloatTensor(
-        DataBlock *block, int outPortNum, int inPortNum);
+FloatTensorRW * outputMsg_moveFloatTensor(
+        DataBlock *block, int outPortNum);
 
-BranchRW * output_moveBranch(
-        DataBlock *block, int outPortNum, int inPortNum);
+BranchRW * outputMsg_moveBranch(
+        DataBlock *block, int outPortNum);
 
 int branchR_getSize(BranchR *branch);
 

@@ -241,8 +241,7 @@ TEST_CASE("Create branches", "[native_interface]") {
 }
 
 TEST_CASE("Access data block", "[native_interface]") {
-    DataBlock block{3, 0, 1};
-    DataBlock *blockPtr;
+    DataBlock blocks[3]{{1}, {1}, {1}};
 
     {
         std::unique_ptr<IntTensorObj> intTensor;
@@ -257,16 +256,9 @@ TEST_CASE("Access data block", "[native_interface]") {
 
         branch = make_unique<BranchObj>(0);
 
-        block.setInput(0, std::move(intTensor));
-        block.setInput(1, std::move(floatTensor));
-        block.setInput(2, std::move(branch));
-
-        blockPtr = &block;
-    }
-
-    SECTION("Access block properties") {
-        REQUIRE(input_getNum(blockPtr) == 3);
-        REQUIRE(output_getNum(blockPtr) == 1);
+        blocks[0].setInputMsg(std::move(intTensor));
+        blocks[1].setInputMsg(std::move(floatTensor));
+        blocks[2].setInputMsg(std::move(branch));
     }
 
     SECTION("Access input values") {
@@ -274,17 +266,15 @@ TEST_CASE("Access data block", "[native_interface]") {
         FloatTensorR *floatTensor;
         BranchR *branch;
 
-        intTensor = input_getIntTensor(blockPtr, 0);
+        intTensor = inputMsg_getIntTensor(&blocks[0]);
         REQUIRE(intTensor->numSizes == 2);
         REQUIRE(intTensor->sizes[0] == 1);
-
-        intTensor = input_getIntTensor(blockPtr, 0);
         REQUIRE(intTensor->contents[0] == 5);
 
-        floatTensor = input_getFloatTensor(blockPtr, 1);
+        floatTensor = inputMsg_getFloatTensor(&blocks[1]);
         REQUIRE(floatTensor->contents[0] == 6.0f);
 
-        branch = input_getBranch(blockPtr, 2);
+        branch = inputMsg_getBranch(&blocks[2]);
         REQUIRE(branchR_getSize(branch) == 0);
     }
 
@@ -293,22 +283,24 @@ TEST_CASE("Access data block", "[native_interface]") {
         FloatTensorRW *floatTensor;
         BranchRW *branch;
 
-        intTensor = output_makeIntTensor(blockPtr, 0, (NumSizes){1}, 1);
+        intTensor = outputMsg_makeIntTensor(
+            &blocks[0], 0, (NumSizes){1}, 1);
         REQUIRE(intTensor->numSizes == 1);
 
-        floatTensor = output_makeFloatTensor(blockPtr, 0, (NumSizes){1}, 1);
+        floatTensor = outputMsg_makeFloatTensor(
+            &blocks[1], 0, (NumSizes){1}, 1);
         REQUIRE(floatTensor->numSizes == 1);
 
-        branch = output_makeBranch(blockPtr, 0, 1);
+        branch = outputMsg_makeBranch(&blocks[2], 0, 1);
         REQUIRE(branchRW_getSize(branch) == 1);
 
-        intTensor = output_moveIntTensor(blockPtr, 0, 0);
+        intTensor = outputMsg_moveIntTensor(&blocks[0], 0);
         REQUIRE(intTensor->numSizes == 2);
 
-        floatTensor = output_moveFloatTensor(blockPtr, 0, 1);
+        floatTensor = outputMsg_moveFloatTensor(&blocks[1], 0);
         REQUIRE(floatTensor->numSizes == 3);
 
-        branch = output_moveBranch(blockPtr, 0, 2);
+        branch = outputMsg_moveBranch(&blocks[2], 0);
         REQUIRE(branchRW_getSize(branch) == 0);
     }
 }

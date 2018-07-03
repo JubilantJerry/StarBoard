@@ -181,52 +181,44 @@ public:
 
 class DataBlock final {
 private:
-    std::vector<DataPtr> inputs_;
-    std::vector<DataPtr> outputs_;
+    DataPtr inputMsg_;
+    std::vector<DataPtr> outputMsgs_;
 
-    friend IntTensorR * input_getIntTensor(
-            DataBlock *block, int inPortNum);
+    friend IntTensorR * inputMsg_getIntTensor(
+            DataBlock *block);
 
-    friend FloatTensorR * input_getFloatTensor(
-            DataBlock *block, int inPortNum);
+    friend FloatTensorR * inputMsg_getFloatTensor(
+            DataBlock *block);
 
-    friend BranchR * input_getBranch(DataBlock *block, int inPortNum);
+    friend BranchR * inputMsg_getBranch(DataBlock *block);
 
-    friend IntTensorRW * output_makeIntTensor(
+    friend IntTensorRW * outputMsg_makeIntTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-    friend FloatTensorRW * output_makeFloatTensor(
+    friend FloatTensorRW * outputMsg_makeFloatTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...);
 
-    friend BranchRW * output_makeBranch(
+    friend BranchRW * outputMsg_makeBranch(
         DataBlock *block, int outPortNum, int size);
 
-    friend IntTensorRW * output_moveIntTensor(
-        DataBlock *block, int outPortNum, int inPortNum);
+    friend IntTensorRW * outputMsg_moveIntTensor(
+        DataBlock *block, int outPortNum);
 
-    friend FloatTensorRW * output_moveFloatTensor(
-        DataBlock *block, int outPortNum, int inPortNum);
+    friend FloatTensorRW * outputMsg_moveFloatTensor(
+        DataBlock *block, int outPortNum);
 
-    friend BranchRW * output_moveBranch(
-        DataBlock *block, int outPortNum, int inPortNum);
+    friend BranchRW * outputMsg_moveBranch(
+        DataBlock *block, int outPortNum);
 
 public:
-    DataBlock(int numInputs, int numStateData, int numOutputs);
+    DataBlock(int numOutputs);
 
-    int numInputs() const noexcept {
-        return inputs_.size();
+    void setInputMsg(DataPtr &&data) noexcept {
+        inputMsg_ = std::move(data);
     }
 
-    int numOutputs() const noexcept {
-        return outputs_.size();
-    }
-
-    void setInput(int inPortNum, DataPtr &&data) noexcept {
-        inputs_[inPortNum] = std::move(data);
-    }
-
-    DataPtr && takeOutput(int outPortNum) noexcept {
-        return std::move(outputs_[outPortNum]);
+    DataPtr && takeOutputMsg(int outPortNum) noexcept {
+        return std::move(outputMsgs_[outPortNum]);
     }
 };
 

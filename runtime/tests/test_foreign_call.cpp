@@ -9,7 +9,7 @@
 #define LIB_DIR "build/lib/"
 
 TEST_CASE("Call foreign addOne function") {
-    DataBlock block{1, 0, 1};
+    DataBlock block{1};
     DataBlock *blockPtr = &block;
     int origValue = 1337;
 
@@ -17,7 +17,7 @@ TEST_CASE("Call foreign addOne function") {
         std::unique_ptr<IntTensorObj> intTensor;
         intTensor = make_unique<IntTensorObj>((NumSizes){1}, 1);
         intTensor->contents()[0] = origValue;
-        block.setInput(0, std::move(intTensor));
+        block.setInputMsg(std::move(intTensor));
     }
 
     NativeLoader loader{};
@@ -26,7 +26,8 @@ TEST_CASE("Call foreign addOne function") {
     function(blockPtr);
 
     {
-        IntTensorObj *intTensor = (IntTensorObj *)(block.takeOutput(0).get());
+        IntTensorObj *intTensor = (IntTensorObj *)(
+            block.takeOutputMsg(0).get());
         REQUIRE(intTensor->contents()[0] == origValue + 1);
     }
 }

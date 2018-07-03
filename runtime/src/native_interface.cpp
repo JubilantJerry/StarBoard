@@ -85,9 +85,8 @@ std::ostream& BranchObj::print(std::ostream &stream) const {
 
 
 
-DataBlock::DataBlock(
-        int numInputs, int numStateData, int numOutputs)
-    :inputs_(numInputs), outputs_(numOutputs) {}
+DataBlock::DataBlock(int numOutputs)
+    :inputMsg_(), outputMsgs_(numOutputs) {}
 
 
 
@@ -111,77 +110,69 @@ static inline BranchObj * accessBranchRW(BranchRW *branch) {
     return static_cast<BranchObj *>(branch);
 }
 
-int input_getNum(DataBlock *block) {
-    return block->numInputs();
+IntTensorR * inputMsg_getIntTensor(DataBlock *block) {
+    return &asIntTensor(block->inputMsg_)->getR();
 }
 
-IntTensorR * input_getIntTensor(DataBlock *block, int inPortNum) {
-    return &asIntTensor(block->inputs_[inPortNum])->getR();
+FloatTensorR * inputMsg_getFloatTensor(DataBlock *block) {
+    return &asFloatTensor(block->inputMsg_)->getR();
 }
 
-FloatTensorR * input_getFloatTensor(DataBlock *block, int inPortNum) {
-    return &asFloatTensor(block->inputs_[inPortNum])->getR();
+BranchR * inputMsg_getBranch(DataBlock *block) {
+    return asBranch(block->inputMsg_);
 }
 
-BranchR * input_getBranch(DataBlock *block, int inPortNum) {
-    return asBranch(block->inputs_[inPortNum]);
-}
-
-int output_getNum(DataBlock *block) {
-    return block->numOutputs();
-}
-
-IntTensorRW * output_makeIntTensor(
+IntTensorRW * outputMsg_makeIntTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...) {
 
     va_list sizesList;
     va_start(sizesList, numSizesV);
-    DataPtr &output = block->outputs_[outPortNum];
+    DataPtr &output = block->outputMsgs_[outPortNum];
     output = make_unique<IntTensorObj>(numSizesV, sizesList);
     va_end(sizesList);
     return &asIntTensor(output)->getRW();
 }
 
-FloatTensorRW * output_makeFloatTensor(
+FloatTensorRW * outputMsg_makeFloatTensor(
         DataBlock *block, int outPortNum, NumSizes numSizesV, ...) {
 
     va_list sizesList;
     va_start(sizesList, numSizesV);
-    DataPtr &output = block->outputs_[outPortNum];
+    DataPtr &output = block->outputMsgs_[outPortNum];
     output = make_unique<FloatTensorObj>(numSizesV, sizesList);
     va_end(sizesList);
     return &asFloatTensor(output)->getRW();
 }
 
-BranchRW * output_makeBranch(
+BranchRW * outputMsg_makeBranch(
         DataBlock *block, int outPortNum, int size) {
 
-    DataPtr &output = block->outputs_[outPortNum];
+    DataPtr &output = block->outputMsgs_[outPortNum];
     output = make_unique<BranchObj>(size);
     return asBranch(output);
 }
 
-IntTensorRW * output_moveIntTensor(
-        DataBlock *block, int outPortNum, int inPortNum) {
+IntTensorRW * outputMsg_moveIntTensor(
+        DataBlock *block, int outPortNum) {
 
-    DataPtr &output = block->outputs_[outPortNum];
-    output = std::move(block->inputs_[inPortNum]);
+    DataPtr &output = block->outputMsgs_[outPortNum];
+    output = std::move(block->inputMsg_);
     return &asIntTensor(output)->getRW();
 }
 
-FloatTensorRW * output_moveFloatTensor(
-        DataBlock *block, int outPortNum, int inPortNum) {
+FloatTensorRW * outputMsg_moveFloatTensor(
+        DataBlock *block, int outPortNum) {
 
-    DataPtr &output = block->outputs_[outPortNum];
-    output = std::move(block->inputs_[inPortNum]);
+    DataPtr &output = block->outputMsgs_[outPortNum];
+    output = std::move(block->inputMsg_);
     return &asFloatTensor(output)->getRW();
 }
 
-BranchRW * output_moveBranch(
-        DataBlock *block, int outPortNum, int inPortNum) {
+BranchRW * outputMsg_moveBranch(
+        DataBlock *block, int outPortNum) {
 
-    DataPtr &output = block->outputs_[outPortNum];
-    output = std::move(block->inputs_[inPortNum]);
+    DataPtr &output = block->outputMsgs_[outPortNum];
+    output = std::move(block->inputMsg_);
     return asBranch(output);
 }
 
