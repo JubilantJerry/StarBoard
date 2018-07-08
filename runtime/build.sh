@@ -23,7 +23,7 @@ clean() {
 }
 
 run_tests() {
-    valgrind --leak-check=full --show-reachable=yes\
+    valgrind --leak-check=full\
              --suppressions=valgrind_suppressions.txt build/bin/tests;
 }
 

@@ -1,8 +1,49 @@
+#include <string>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
+#include <custom_utility.hpp>
+
 #include "catch.hpp"
 #include "module_port_scheduler.hpp"
 
+TEST_CASE("Message queue functionality") {
+    MessageQueue queue{2};
+    DataPtr intTensors[3];
+
+    for (int i = 0; i < 3; i++) {
+        std::unique_ptr<IntTensor> result =
+            make_unique<IntTensor>(NumSizes{1}, 1);
+        result->contents()[0] = i;
+        intTensors[i] = std::move(result);
+    }
+
+    SECTION("Not reaching capacity") {
+        REQUIRE(queue.size() == 0);
+        queue.enqueue(std::move(intTensors[0]));
+        queue.enqueue(std::move(intTensors[1]));
+        REQUIRE(queue.size() == 2);
+        intTensors[0] = queue.dequeue();
+        REQUIRE(queue.size() == 1);
+        REQUIRE(static_cast<IntTensor *>(
+            intTensors[0].get())->contents()[0] == 0);
+    }
+
+    SECTION("Reaching capacity") {
+        queue.enqueue(std::move(intTensors[0]));
+        queue.enqueue(std::move(intTensors[1]));
+        queue.enqueue(std::move(intTensors[2]));
+        REQUIRE(queue.size() == 2);
+        intTensors[1] = queue.dequeue();
+        REQUIRE(static_cast<IntTensor *>(
+            intTensors[1].get())->contents()[0] == 1);
+    }
+}
+
 TEST_CASE("Basic properties of the scheduler") {
-    ModulePortScheduler scheduler{3};
+    ModulePortScheduler scheduler{3, 2};
 
     SECTION("Initial setup") {
         REQUIRE(scheduler.numDataReady() == 0);
@@ -62,5 +103,75 @@ TEST_CASE("Basic properties of the scheduler") {
         scheduler.setModulePortReady(0, false);
         REQUIRE(scheduler.nextModulePort() == 1);
         REQUIRE(scheduler.nextModulePort() == 1);
+    }
+
+    SECTION("Contains message queues") {
+        {
+            MessageQueue &queue = scheduler.getQueue(0);
+            queue.enqueue(DataPtr{});
+            REQUIRE(queue.size() == 1);
+        }{
+            MessageQueue &queue = scheduler.getQueue(1);
+            REQUIRE(queue.size() == 0);
+        }
+    }
+
+    SECTION("Can be locked") {
+        std::mutex threadActiveMutex;
+        LockHandle threadActiveLock{threadActiveMutex};
+        std::condition_variable threadActiveCV;
+        std::atomic<bool> threadActive{false};
+
+        std::mutex threadGotLockMutex;
+        LockHandle threadGotLockLock{threadGotLockMutex};
+        std::condition_variable threadGotLockCV;
+        std::atomic<bool> threadGotLock{false};
+
+        std::thread thread;
+
+        std::chrono::system_clock::time_point startTime;
+
+        {
+        LockHandle schedulerLock = scheduler.lock();
+
+        thread = std::thread{[&] {
+            {
+            LockHandle{threadActiveMutex};
+            threadActive.store(true);
+            threadActiveCV.notify_one();
+            }
+            
+            LockHandle schedulerLock = scheduler.lock();
+            
+            {
+            LockHandle{threadGotLockMutex};
+            threadGotLock.store(true);
+            threadGotLockCV.notify_one();
+            }
+        }};
+        thread.detach();
+
+        startTime = std::chrono::system_clock::now();
+        while (!threadActive.load()) {
+            threadActiveCV.wait_for(
+                threadActiveLock, std::chrono::milliseconds(1000));
+            if (std::chrono::system_clock::now() - startTime >
+                std::chrono::milliseconds(1000)) {
+                FAIL("Time out");
+            }
+        }
+        REQUIRE(!threadGotLock.load());
+        }
+
+        startTime = std::chrono::system_clock::now();
+        while (!threadGotLock.load()) {
+            threadGotLockCV.wait_for(
+                threadGotLockLock, std::chrono::milliseconds(1000));
+            if (std::chrono::system_clock::now() - startTime >
+                std::chrono::milliseconds(1000)) {
+                FAIL("Time out");
+            }
+        }
+        REQUIRE(threadGotLock.load());
     }
 }

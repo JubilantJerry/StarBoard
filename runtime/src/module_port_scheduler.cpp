@@ -1,6 +1,6 @@
 #include "module_port_scheduler.hpp"
 
-ModulePortScheduler::ModulePortScheduler(int numModules)
+ModulePortScheduler::ModulePortScheduler(int numModules, int maxQueueSize)
         :numDataReady_(0),
          numModulePortsReady_(numModules),
          numModulePortsPending_(0),
@@ -8,7 +8,13 @@ ModulePortScheduler::ModulePortScheduler(int numModules)
          modulePortsReady_(numModules, true),
          modulePortsPending_(numModules, false),
          pendingList_(0),
-         pendingListIterators_(numModules, pendingList_.begin()) {}
+         pendingListIterators_(numModules, pendingList_.begin()),
+         queues_(numModules) {
+
+    for (int i = 0; i < numModules; i++) {
+        queues_[i] = std::move(MessageQueue{maxQueueSize});
+    }
+ }
 
 void ModulePortScheduler::updateModulePortsPending(int modulePort) {
     bool wasPending = modulePortsPending_[modulePort];
