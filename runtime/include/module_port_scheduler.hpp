@@ -41,8 +41,8 @@ private:
     int numModulePortsPending_;
 
     std::vector<int> dataReady_;
-    std::vector<int> modulePortsReady_;
-    std::vector<int> modulePortsPending_;
+    std::vector<int> modulePortReady_;
+    std::vector<int> modulePortPending_;
 
     std::list<int, boost::fast_pool_allocator<int>> pendingList_;
     std::vector<std::list<int>::iterator> pendingListIterators_;
@@ -65,6 +65,18 @@ public:
 
     int numModulePortsPending() noexcept {
         return numModulePortsPending_;
+    }
+
+    bool dataReady(int modulePort) {
+        return dataReady_[modulePort];
+    }
+
+    bool modulePortReady(int modulePort) {
+        return modulePortReady_[modulePort];
+    }
+
+    bool modulePortPending(int modulePort) {
+        return modulePortPending_[modulePort];
     }
 
     void setDataReady(int modulePort, bool value);

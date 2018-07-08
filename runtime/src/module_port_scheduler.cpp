@@ -5,8 +5,8 @@ ModulePortScheduler::ModulePortScheduler(int numModules, int maxQueueSize)
          numModulePortsReady_(numModules),
          numModulePortsPending_(0),
          dataReady_(numModules, false),
-         modulePortsReady_(numModules, true),
-         modulePortsPending_(numModules, false),
+         modulePortReady_(numModules, true),
+         modulePortPending_(numModules, false),
          pendingList_(0),
          pendingListIterators_(numModules, pendingList_.begin()),
          queues_(numModules) {
@@ -17,17 +17,17 @@ ModulePortScheduler::ModulePortScheduler(int numModules, int maxQueueSize)
  }
 
 void ModulePortScheduler::updateModulePortsPending(int modulePort) {
-    bool wasPending = modulePortsPending_[modulePort];
+    bool wasPending = modulePortPending_[modulePort];
     bool nowPending = (
-        dataReady_[modulePort] && modulePortsReady_[modulePort]);
+        dataReady_[modulePort] && modulePortReady_[modulePort]);
 
     if (nowPending && !wasPending) {
-        modulePortsPending_[modulePort] = true;
+        modulePortPending_[modulePort] = true;
         numModulePortsPending_ += 1;
         pendingList_.emplace_back(modulePort);
         pendingListIterators_[modulePort] = --pendingList_.end();
     } else if (!nowPending && wasPending) {
-        modulePortsPending_[modulePort] = false;
+        modulePortPending_[modulePort] = false;
         numModulePortsPending_ -= 1;
         pendingList_.erase(pendingListIterators_[modulePort]);
     }
@@ -42,8 +42,8 @@ void ModulePortScheduler::setDataReady(int modulePort, bool value) {
 }
 
 void ModulePortScheduler::setModulePortReady(int modulePort, bool value) {
-    if (modulePortsReady_[modulePort] != value) {
-        modulePortsReady_[modulePort] = value;
+    if (modulePortReady_[modulePort] != value) {
+        modulePortReady_[modulePort] = value;
         numModulePortsReady_ += (value ? 1 : -1);
         updateModulePortsPending(modulePort);
     }

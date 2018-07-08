@@ -1,12 +1,9 @@
 #include <string>
-#include <chrono>
 #include <thread>
-#include <mutex>
-#include <atomic>
-#include <condition_variable>
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
+#include "threaded_test_util.hpp"
 #include "module_port_scheduler.hpp"
 
 TEST_CASE("Message queue functionality") {
@@ -117,61 +114,22 @@ TEST_CASE("Basic properties of the scheduler") {
     }
 
     SECTION("Can be locked") {
-        std::mutex threadActiveMutex;
-        LockHandle threadActiveLock{threadActiveMutex};
-        std::condition_variable threadActiveCV;
-        std::atomic<bool> threadActive{false};
+        BooleanFlag threadActive{false};
+        BooleanFlag threadGotLock{false};
 
-        std::mutex threadGotLockMutex;
-        LockHandle threadGotLockLock{threadGotLockMutex};
-        std::condition_variable threadGotLockCV;
-        std::atomic<bool> threadGotLock{false};
-
-        std::thread thread;
-
-        std::chrono::system_clock::time_point startTime;
-
-        {
         LockHandle schedulerLock = scheduler.lock();
-
-        thread = std::thread{[&] {
-            {
-            LockHandle{threadActiveMutex};
-            threadActive.store(true);
-            threadActiveCV.notify_one();
-            }
+        std::thread thread{[&] {
+            threadActive.setAndSignal(true);
             
             LockHandle schedulerLock = scheduler.lock();
             
-            {
-            LockHandle{threadGotLockMutex};
-            threadGotLock.store(true);
-            threadGotLockCV.notify_one();
-            }
+            threadGotLock.setAndSignal(true);
         }};
         thread.detach();
 
-        startTime = std::chrono::system_clock::now();
-        while (!threadActive.load()) {
-            threadActiveCV.wait_for(
-                threadActiveLock, std::chrono::milliseconds(1000));
-            if (std::chrono::system_clock::now() - startTime >
-                std::chrono::milliseconds(1000)) {
-                FAIL("Time out");
-            }
-        }
-        REQUIRE(!threadGotLock.load());
-        }
-
-        startTime = std::chrono::system_clock::now();
-        while (!threadGotLock.load()) {
-            threadGotLockCV.wait_for(
-                threadGotLockLock, std::chrono::milliseconds(1000));
-            if (std::chrono::system_clock::now() - startTime >
-                std::chrono::milliseconds(1000)) {
-                FAIL("Time out");
-            }
-        }
-        REQUIRE(threadGotLock.load());
+        threadActive.waitForValue(true);
+        REQUIRE(!threadGotLock.value());
+        schedulerLock.unlock();
+        threadGotLock.waitForValue(true);
     }
 }
