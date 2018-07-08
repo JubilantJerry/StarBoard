@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 include_directories(${Boost_INCLUDE_DIRS})
 
+add_library(data STATIC data.cpp)
 add_library(native_interface STATIC native_interface.cpp)
 add_library(native_loader STATIC native_loader.cpp)
 add_library(module_port_scheduler STATIC module_port_scheduler.cpp)

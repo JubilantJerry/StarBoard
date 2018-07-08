@@ -7,12 +7,12 @@
 
 TEST_CASE("Create integer tensor", "[native_interface]") {
     SECTION("Default construction") {
-        IntTensorObj intTensor{};
+        IntTensor intTensor{};
         REQUIRE(intTensor.numSizes() == 0);
     }
 
     SECTION("Size 2 tensor") {
-        IntTensorObj intTensor{(NumSizes){1}, 2};
+        IntTensor intTensor{(NumSizes){1}, 2};
         IntTensorR *intTensorR = &intTensor.getR();
         IntTensorRW *intTensorRW = &intTensor.getRW();
 
@@ -37,7 +37,7 @@ TEST_CASE("Create integer tensor", "[native_interface]") {
     }
 
     SECTION("Size (2, 3) tensor") {
-        IntTensorObj intTensor{(NumSizes){2}, 2, 3};
+        IntTensor intTensor{(NumSizes){2}, 2, 3};
         IntTensorR *intTensorR = &intTensor.getR();
         IntTensorRW *intTensorRW = &intTensor.getRW();
 
@@ -73,12 +73,12 @@ TEST_CASE("Create integer tensor", "[native_interface]") {
 
 TEST_CASE("Create float tensor", "[native_interface]") {
     SECTION("Default construction") {
-        FloatTensorObj floatTensor{};
+        FloatTensor floatTensor{};
         REQUIRE(floatTensor.numSizes() == 0);
     }
 
     SECTION("Size (2, 2, 2) tensor") {
-        FloatTensorObj floatTensor{(NumSizes){3}, 2, 2, 2};
+        FloatTensor floatTensor{(NumSizes){3}, 2, 2, 2};
         FloatTensorR *floatTensorR = &floatTensor.getR();
         FloatTensorRW *floatTensorRW = &floatTensor.getRW();
 
@@ -134,11 +134,11 @@ TEST_CASE("Create branches", "[native_interface]") {
         BranchRW *branchRW;
 
         {
-            std::unique_ptr<IntTensorObj> intScalar;
-            std::unique_ptr<FloatTensorObj> floatScalar;
+            std::unique_ptr<IntTensor> intScalar;
+            std::unique_ptr<FloatTensor> floatScalar;
 
-            intScalar = make_unique<IntTensorObj>((NumSizes){1}, 1);
-            floatScalar = make_unique<FloatTensorObj>((NumSizes){1}, 1);
+            intScalar = make_unique<IntTensor>((NumSizes){1}, 1);
+            floatScalar = make_unique<FloatTensor>((NumSizes){1}, 1);
 
             intScalar->contents()[0] = 5;
             floatScalar->contents()[0] = 6.0f;
@@ -244,14 +244,14 @@ TEST_CASE("Access data block", "[native_interface]") {
     DataBlock blocks[3]{{1}, {1}, {1}};
 
     {
-        std::unique_ptr<IntTensorObj> intTensor;
-        std::unique_ptr<FloatTensorObj> floatTensor;
+        std::unique_ptr<IntTensor> intTensor;
+        std::unique_ptr<FloatTensor> floatTensor;
         std::unique_ptr<BranchObj> branch;
 
-        intTensor = make_unique<IntTensorObj>((NumSizes){2}, 1, 1);
+        intTensor = make_unique<IntTensor>((NumSizes){2}, 1, 1);
         intTensor->contents()[0] = 5;
 
-        floatTensor = make_unique<FloatTensorObj>((NumSizes){3}, 1, 1, 1);
+        floatTensor = make_unique<FloatTensor>((NumSizes){3}, 1, 1, 1);
         floatTensor->contents()[0] = 6.0f;
 
         branch = make_unique<BranchObj>(0);

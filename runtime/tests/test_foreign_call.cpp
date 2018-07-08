@@ -14,8 +14,8 @@ TEST_CASE("Call foreign addOne function") {
     int origValue = 1337;
 
     {
-        std::unique_ptr<IntTensorObj> intTensor;
-        intTensor = make_unique<IntTensorObj>((NumSizes){1}, 1);
+        std::unique_ptr<IntTensor> intTensor;
+        intTensor = make_unique<IntTensor>((NumSizes){1}, 1);
         intTensor->contents()[0] = origValue;
         block.setInputMsg(std::move(intTensor));
     }
@@ -26,7 +26,7 @@ TEST_CASE("Call foreign addOne function") {
     function(blockPtr);
 
     {
-        IntTensorObj *intTensor = (IntTensorObj *)(
+        IntTensor *intTensor = (IntTensor *)(
             block.takeOutputMsg(0).get());
         REQUIRE(intTensor->contents()[0] == origValue + 1);
     }
