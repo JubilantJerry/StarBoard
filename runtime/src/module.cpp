@@ -1,5 +1,7 @@
 #include <string>
+
 #include "module.hpp"
+#include "module_data_handler.hpp"
 
 Module::Module(ModulePortScheduler &scheduler,
        int offset,

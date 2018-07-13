@@ -3,7 +3,7 @@
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
-#include "native_interface.hpp"
+#include "data_interface.hpp"
 #include "native_loader.hpp"
 
 #define LIB_DIR "build/lib/"

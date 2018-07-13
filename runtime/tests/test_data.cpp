@@ -3,9 +3,9 @@
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
-#include "native_interface.hpp"
+#include "data_interface.hpp"
 
-TEST_CASE("Create integer tensor", "[native_interface]") {
+TEST_CASE("Create integer tensor", "[data_interface]") {
     SECTION("Default construction") {
         IntTensor intTensor{};
         REQUIRE(intTensor.numSizes() == 0);
@@ -71,7 +71,7 @@ TEST_CASE("Create integer tensor", "[native_interface]") {
     }
 }
 
-TEST_CASE("Create float tensor", "[native_interface]") {
+TEST_CASE("Create float tensor", "[data_interface]") {
     SECTION("Default construction") {
         FloatTensor floatTensor{};
         REQUIRE(floatTensor.numSizes() == 0);
@@ -117,7 +117,7 @@ TEST_CASE("Create float tensor", "[native_interface]") {
     }
 }
 
-TEST_CASE("Create branches", "[native_interface]") {
+TEST_CASE("Create branches", "[data_interface]") {
     SECTION("Empty branch") {
         BranchObj empty{0};
         BranchR *branchR = &empty;
@@ -240,7 +240,7 @@ TEST_CASE("Create branches", "[native_interface]") {
     }
 }
 
-TEST_CASE("Access data block", "[native_interface]") {
+TEST_CASE("Access data block", "[data_interface]") {
     DataBlock blocks[3]{{1}, {1}, {1}};
 
     {

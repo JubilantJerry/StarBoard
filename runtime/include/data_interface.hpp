@@ -6,7 +6,7 @@
 #include "data.hpp"
 
 extern "C" {
-#include "native_interface.h"
+#include "data_interface.h"
 }
 
 class DataBlock final {

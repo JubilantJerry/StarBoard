@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "native_interface.hpp"
+#include "data_interface.hpp"
 
 using LibraryHandle = void *;
 

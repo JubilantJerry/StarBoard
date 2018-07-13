@@ -14,7 +14,7 @@ add_executable(tests test_main.cpp
     test_module.cpp)
 target_link_libraries(tests
     data
-    native_interface
+    data_interface
     native_loader
     module_port_scheduler
     module

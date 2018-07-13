@@ -3,17 +3,10 @@
 
 #include <memory>
 
-#include "native_interface.hpp"
+#include "data_interface.hpp"
 #include "module_port_scheduler.hpp"
 
-class Module;
-
-class ModuleDataHandler {
-public:
-    virtual void linkToModule(Module *module, int modulePort) = 0;
-
-    virtual void receiveData(DataBlock &&block) = 0;
-};
+class ModuleDataHandler;
 
 using ModuleDataHandlerPtr = std::unique_ptr<ModuleDataHandler>;
 

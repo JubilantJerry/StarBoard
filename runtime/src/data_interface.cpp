@@ -1,6 +1,6 @@
 #include <custom_utility.hpp>
 
-#include "native_interface.hpp"
+#include "data_interface.hpp"
 
 DataBlock::DataBlock(int numOutputs)
     :inputMsg_(), outputMsgs_(numOutputs) {}

@@ -4,8 +4,9 @@
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
-#include "native_interface.hpp"
+#include "data_interface.hpp"
 #include "module.hpp"
+#include "module_data_handler.hpp"
 
 
 class LoggingDataHandler: public ModuleDataHandler {
