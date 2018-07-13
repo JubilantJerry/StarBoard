@@ -46,30 +46,37 @@ TEST_CASE("Module correctly offloading functionality") {
     };
     static_cast<IntTensor *>(intTensors[0].get())->contents()[0] = 7;
     static_cast<IntTensor *>(intTensors[1].get())->contents()[0] = 13;
+
     scheduler.getQueue(1).enqueue(std::move(intTensors[0]));
+    scheduler.setDataReady(1, true);
     scheduler.getQueue(2).enqueue(std::move(intTensors[1]));
+    scheduler.setDataReady(2, true);
 
     SECTION("Two port module with no resource requirements") {
         ModuleBuilder moduleBuilder;
-        moduleBuilder.setOffset(1);
-        moduleBuilder.addInputMessagePort(std::move(moduleHandlers[0]));
-        moduleBuilder.addInputMessagePort(std::move(moduleHandlers[1]));
-        moduleBuilder.addOutputMessagePort(0);
+        moduleBuilder
+            .setOffset(1)
+            .addInputMessagePort(std::move(moduleHandlers[0]))
+            .addInputMessagePort(std::move(moduleHandlers[1]))
+            .addOutputMessagePort(0);
 
         Module module = moduleBuilder.build(scheduler);
-
-        REQUIRE(scheduler.getQueue(0).size() == 0);
         LockHandle schedulerLock;
 
         schedulerLock = scheduler.lock();
-        REQUIRE(scheduler.modulePortReady(1));
+        REQUIRE(scheduler.modulePortPending(1));
         module.acquire(1, std::move(schedulerLock));
+        REQUIRE(!scheduler.dataReady(1));
+        REQUIRE(scheduler.modulePortReady(1));
 
         schedulerLock = scheduler.lock();
-        REQUIRE(scheduler.modulePortReady(2));
+        REQUIRE(scheduler.modulePortPending(2));
         module.acquire(2, std::move(schedulerLock));
+        REQUIRE(!scheduler.dataReady(2));
+        REQUIRE(scheduler.modulePortReady(2));
 
         REQUIRE(scheduler.getQueue(0).size() == 2);
+        REQUIRE(scheduler.dataReady(0));
         REQUIRE(log.str() == "Port A received data: 7\n"
                              "Port B received data: 13\n");
     }

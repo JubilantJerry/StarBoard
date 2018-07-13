@@ -10,7 +10,7 @@ class Module;
 
 class ModuleDataHandler {
 public:
-    virtual void linkToModule(Module *module, int modulePortNum) = 0;
+    virtual void linkToModule(Module *module, int modulePort) = 0;
 
     virtual void receiveData(DataBlock &&block) = 0;
 };
@@ -19,22 +19,55 @@ using ModuleDataHandlerPtr = std::unique_ptr<ModuleDataHandler>;
 
 class Module final {
 private:
+    ModulePortScheduler &scheduler_;
+
+    int offset_;
+    std::vector<ModuleDataHandlerPtr> dataHandlers_;
+    std::vector<int> outModulePorts_;
+
+    Module(ModulePortScheduler &scheduler,
+           int offset,
+           std::vector<ModuleDataHandlerPtr> &&dataHandlers,
+           std::vector<int> &&outModulePorts);
+
+    void testInputRange(int modulePort);
+
     friend class ModuleBuilder;
-    Module() {}
 public:
-    void acquire(int modulePortNum, LockHandle &&lock) {
-        LockHandle temp = std::move(lock);
-    }
-    void release(int modulePortNum, DataBlock &&dataBlock) {}
+    void acquire(int modulePort, LockHandle lock);
+    void release(int modulePort, DataBlock dataBlock);
 };
 
 class ModuleBuilder final {
+private:
+    int offset_;
+    std::vector<ModuleDataHandlerPtr> dataHandlers_;
+    std::vector<int> outModulePorts_;
 public:
-    void setOffset(int offset) {}
-    void addInputMessagePort(ModuleDataHandlerPtr &&moduleDataHandler) {}
-    void addOutputMessagePort(int destModulePortNum) {}
+    ModuleBuilder & setOffset(int offset) {
+        offset_ = offset;
+        return *this;
+    }
+
+    ModuleBuilder & addInputMessagePort(
+            ModuleDataHandlerPtr &&moduleDataHandler) {
+
+        dataHandlers_.push_back(std::move(moduleDataHandler));
+        return *this;
+    }
+
+    ModuleBuilder & addOutputMessagePort(int outModulePort) {
+        outModulePorts_.push_back(outModulePort);
+        return *this;
+    }
+
     Module build(ModulePortScheduler &scheduler) {
-        return Module{};
+        return Module{
+            scheduler,
+            offset_,
+            std::move(dataHandlers_),
+            std::move(outModulePorts_)
+        };
     }
 };
 

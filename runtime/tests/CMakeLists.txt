@@ -17,5 +17,6 @@ target_link_libraries(tests
     native_interface
     native_loader
     module_port_scheduler
+    module
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS})

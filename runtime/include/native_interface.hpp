@@ -43,6 +43,10 @@ private:
 public:
     DataBlock(int numOutputs);
 
+    int numOutputs() {
+        return outputMsgs_.size();
+    }
+
     void setInputMsg(DataPtr &&data) noexcept {
         inputMsg_ = std::move(data);
     }
