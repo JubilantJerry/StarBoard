@@ -38,16 +38,14 @@ IntTensor::IntTensor(NumSizes numSizesV, va_list sizesList)
     fillSelf(numSizesV, sizesList);
 }
 
-std::ostream& IntTensor::print(std::ostream &stream) const {
+void IntTensor::print(std::ostream &stream) const {
     stream << "IntTensor";
     stream << std::make_pair(
         payload_.m.sizes, payload_.m.sizes + payload_.m.numSizes);
-    return stream;
 }
 
-DataVisitor& IntTensor::requestVisit(DataVisitor &visitor) const {
+void IntTensor::requestVisit(DataVisitor &visitor) const {
     visitor.visitIntTensor(*this);
-    return visitor;
 }
 
 inline void FloatTensor::fillSelf(
@@ -75,26 +73,22 @@ FloatTensor::FloatTensor(NumSizes numSizesV, va_list sizesList)
     fillSelf(numSizesV, sizesList);
 }
 
-std::ostream& FloatTensor::print(std::ostream &stream) const {
+void FloatTensor::print(std::ostream &stream) const {
     stream << "FloatTensor";
     stream << std::make_pair(
         payload_.m.sizes, payload_.m.sizes + payload_.m.numSizes);
-    return stream;
 }
 
-DataVisitor& FloatTensor::requestVisit(DataVisitor &visitor) const {
+void FloatTensor::requestVisit(DataVisitor &visitor) const {
     visitor.visitFloatTensor(*this);
-    return visitor;
 }
 
-std::ostream& Branch::print(std::ostream &stream) const {
+void Branch::print(std::ostream &stream) const {
     stream << values_;
-    return stream;
 }
 
-DataVisitor& Branch::requestVisit(DataVisitor &visitor) const {
+void Branch::requestVisit(DataVisitor &visitor) const {
     visitor.visitBranch(*this);
-    return visitor;
 }
 
 static inline IntTensor * asIntTensor(DataPtr &data) {

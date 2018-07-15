@@ -17,9 +17,9 @@ using DataPtr = std::unique_ptr<Data>;
 
 class Data {
 protected:
-    virtual std::ostream& print(std::ostream &stream) const = 0;
+    virtual void print(std::ostream &stream) const = 0;
 
-    virtual DataVisitor& requestVisit(DataVisitor &visitor) const = 0;
+    virtual void requestVisit(DataVisitor &visitor) const = 0;
 
 public:
     Data() noexcept = default;
@@ -30,11 +30,18 @@ public:
     virtual Data& operator=(Data&&) noexcept = default;
 
     friend std::ostream& operator<<(std::ostream &stream, Data const &data) {
-        return data.print(stream);
+        data.print(stream);
+        return stream;
     }
 
     friend DataVisitor& operator&(DataVisitor &visitor, Data const &data) {
-        return data.requestVisit(visitor);
+        data.requestVisit(visitor);
+        return visitor;
+    }
+
+    friend DataVisitor&& operator&(DataVisitor &&visitor, Data const &data) {
+        data.requestVisit(visitor);
+        return std::move(visitor);
     }
 };
 
@@ -54,8 +61,8 @@ private:
 
     void fillSelf(NumSizes numSizesV, va_list args);
 
-    virtual std::ostream& print(std::ostream &stream) const override;
-    virtual DataVisitor& requestVisit(DataVisitor &visitor) const override;
+    virtual void print(std::ostream &stream) const override;
+    virtual void requestVisit(DataVisitor &visitor) const override;
 
 public:
     IntTensor() noexcept {};
@@ -111,8 +118,8 @@ private:
 
     void fillSelf(NumSizes numSizesV, va_list args);
 
-    virtual std::ostream& print(std::ostream &stream) const override;
-    virtual DataVisitor& requestVisit(DataVisitor &visitor) const override;
+    virtual void print(std::ostream &stream) const override;
+    virtual void requestVisit(DataVisitor &visitor) const override;
 
 public:
     FloatTensor() noexcept {};
@@ -160,8 +167,8 @@ class Branch final: public BranchR, public BranchRW, public Data {
 private:
     std::vector<DataPtr> values_;
 
-    virtual std::ostream& print(std::ostream &stream) const override;
-    virtual DataVisitor& requestVisit(DataVisitor &visitor) const override;
+    virtual void print(std::ostream &stream) const override;
+    virtual void requestVisit(DataVisitor &visitor) const override;
 
     friend IntTensorR * branchR_getIntTensor(
             BranchR *branch, int index);

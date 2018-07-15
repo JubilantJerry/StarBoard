@@ -68,3 +68,20 @@ TEST_CASE("Serialization of data") {
         REQUIRE(receivedFloatData.contents()[0] == 0.9f);
     }
 }
+
+TEST_CASE("Serialization of messages") {
+    std::stringstream stream{};
+
+    std::unique_ptr<IntTensor> intTensor =
+        make_unique<IntTensor>((NumSizes){1}, 1);
+    intTensor->contents()[0] = 3;
+    DataPtr message{std::move(intTensor)};
+
+    serializeMessage(stream, message);
+
+    DataPtr receivedData = deserializeMessage(stream);
+    IntTensor &receivedIntData =
+            *dynamic_cast<IntTensor *>(receivedData.get());
+
+    REQUIRE(receivedIntData.contents()[0] == 3);
+}

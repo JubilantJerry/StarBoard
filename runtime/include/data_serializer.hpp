@@ -8,6 +8,7 @@
 #define MAGIC_NUM 0x005A6A53
 
 enum Keyword {
+    MESSAGE,
     DATA_BLOCK,
     INT_TENSOR,
     FLOAT_TENSOR,
@@ -31,7 +32,13 @@ template<typename StreamType>
 extern DataPtr deserializeData(StreamType &stream);
 
 template<typename StreamType>
-extern void serializeDataBlock(StreamType &stream, DataBlock &block);
+extern void serializeMessage(StreamType &stream, DataPtr const &message);
+
+template<typename StreamType>
+extern DataPtr deserializeMessage(StreamType &stream);
+
+template<typename StreamType>
+extern void serializeDataBlock(StreamType &stream, DataBlock const &block);
 
 template<typename StreamType>
 extern DataBlock deserializeDataBlock(StreamType &stream);

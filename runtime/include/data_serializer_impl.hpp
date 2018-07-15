@@ -45,7 +45,7 @@ static inline int deserializeSizes
         (StreamType &stream, int &numSizes, std::unique_ptr<int[]> &sizes) {
 
     numSizes = deserializeInt(stream);
-    sizes = make_unique<int[]>((size_t)numSizes);
+    sizes = make_unique<int[]>(numSizes);
     int totalSize = 1;
 
     for (int i = 0; i < numSizes; i++) {
@@ -148,8 +148,16 @@ DataPtr deserializeData(StreamType &stream) {
     }
 }
 
-// template<typename StreamType>
-// void serializeDataBlock(StreamType &stream, DataBlock &block);
+template<typename StreamType>
+extern void serializeMessage(StreamType &stream, DataPtr const &message) {
+    serializeInt(stream, Keyword::MESSAGE);
+    DataSerializer<StreamType>{stream} & *message;
+}
 
-// template<typename StreamType>
-// DataBlock deserializeDataBlock(StreamType &stream);
+template<typename StreamType>
+extern DataPtr deserializeMessage(StreamType &stream) {
+    if (deserializeInt(stream) != Keyword::MESSAGE) {
+        throw std::runtime_error("Invalid serialization");
+    }
+    return deserializeData(stream);
+}
