@@ -14,22 +14,14 @@ private:
     std::string tag_;
     std::stringstream &log_;
 
-    Module *module_;
-    int modulePortNum_;
-
 public:
     LoggingDataHandler(std::string tag, std::stringstream &log)
             : tag_(tag), log_(log) {}
 
-    void linkToModule(Module *module, int modulePortNum) {
-        module_ = module;
-        modulePortNum_ = modulePortNum;
-    }
-
     void receiveData(DataBlock &&block) {
         log_ << "Port " << tag_ << " received data: " <<
             outputMsg_moveIntTensor(&block, 0)->contents[0] << "\n";
-        module_->release(modulePortNum_, std::move(block));
+        module()->release(modulePort(), std::move(block));
     }
 };
 

@@ -10,14 +10,16 @@ extern "C" {
 #include "data.h"
 }
 
-class Data {
-private:
-    friend std::ostream& operator<<(std::ostream &stream, const Data &data) {
-        return data.print(stream);
-    }
+class Data;
+class DataVisitor;
 
+using DataPtr = std::unique_ptr<Data>;
+
+class Data {
 protected:
     virtual std::ostream& print(std::ostream &stream) const = 0;
+
+    virtual DataVisitor& requestVisit(DataVisitor &visitor) const = 0;
 
 public:
     Data() noexcept = default;
@@ -26,9 +28,15 @@ public:
     Data(Data&&) noexcept = default;
     Data& operator=(Data const&) = delete;
     virtual Data& operator=(Data&&) noexcept = default;
-};
 
-using DataPtr = std::unique_ptr<Data>;
+    friend std::ostream& operator<<(std::ostream &stream, Data const &data) {
+        return data.print(stream);
+    }
+
+    friend DataVisitor& operator&(DataVisitor &visitor, Data const &data) {
+        return data.requestVisit(visitor);
+    }
+};
 
 class IntTensor final: public Data {
 private:
@@ -46,35 +54,43 @@ private:
 
     void fillSelf(NumSizes numSizesV, va_list args);
 
-    std::ostream& print(std::ostream &stream) const override;
+    virtual std::ostream& print(std::ostream &stream) const override;
+    virtual DataVisitor& requestVisit(DataVisitor &visitor) const override;
 
 public:
     IntTensor() noexcept {};
     IntTensor(NumSizes numSizesV, ...);
     IntTensor(NumSizes numSizesV, va_list args);
+    IntTensor(IntTensorM &&payload) {
+        payload_.m = payload;
+    }
 
     ~IntTensor() noexcept {
         delete[] payload_.m.sizes;
         delete[] payload_.m.contents;
     }
 
-    int numSizes() {
+    int numSizes() const noexcept {
         return payload_.m.numSizes;
     }
 
-    int const *sizes() {
+    int const *sizes() const noexcept {
         return payload_.m.sizes;
     }
 
-    int *contents() {
+    int *contents() noexcept {
         return payload_.m.contents;
     }
 
-    IntTensorR &getR() {
+    int const *contents() const noexcept {
+        return payload_.m.contents;
+    }
+
+    IntTensorR &getR() noexcept {
         return payload_.r;
     }
 
-    IntTensorRW &getRW() {
+    IntTensorRW &getRW() noexcept {
         return payload_.rw;
     }
 };
@@ -95,35 +111,43 @@ private:
 
     void fillSelf(NumSizes numSizesV, va_list args);
 
-    std::ostream& print(std::ostream &stream) const override;
+    virtual std::ostream& print(std::ostream &stream) const override;
+    virtual DataVisitor& requestVisit(DataVisitor &visitor) const override;
 
 public:
     FloatTensor() noexcept {};
     FloatTensor(NumSizes numSizesV, ...);
     FloatTensor(NumSizes numSizesV, va_list args);
+    FloatTensor(FloatTensorM &&payload) {
+        payload_.m = payload;
+    }
 
     ~FloatTensor() noexcept {
         delete[] payload_.m.sizes;
         delete[] payload_.m.contents;
     }
 
-    int numSizes() {
+    int numSizes() const noexcept {
         return payload_.m.numSizes;
     }
 
-    int const *sizes() {
+    int const *sizes() const noexcept {
         return payload_.m.sizes;
     }
 
-    float *contents() {
+    float *contents() noexcept {
         return payload_.m.contents;
     }
 
-    FloatTensorR &getR() {
+    float const *contents() const noexcept {
+        return payload_.m.contents;
+    }
+
+    FloatTensorR &getR() noexcept {
         return payload_.r;
     }
 
-    FloatTensorRW &getRW() {
+    FloatTensorRW &getRW() noexcept {
         return payload_.rw;
     }
 };
@@ -132,11 +156,12 @@ struct BranchR {};
 
 struct BranchRW {};
 
-class BranchObj final: public BranchR, public BranchRW, public Data {
+class Branch final: public BranchR, public BranchRW, public Data {
 private:
     std::vector<DataPtr> values_;
 
-    std::ostream& print(std::ostream &stream) const override;
+    virtual std::ostream& print(std::ostream &stream) const override;
+    virtual DataVisitor& requestVisit(DataVisitor &visitor) const override;
 
     friend IntTensorR * branchR_getIntTensor(
             BranchR *branch, int index);
@@ -168,7 +193,11 @@ private:
     friend void branchRW_pop(BranchRW *branch);
 
 public:
-    BranchObj(int size): values_(size) {}
+    Branch(int size): values_(size) {}
+
+    DataPtr const & getValue(int index) const noexcept {
+        return values_[index];
+    }
 
     void setValue(int index, DataPtr &&data) noexcept {
         values_[index] = std::move(data);
@@ -179,5 +208,11 @@ public:
     }
 };
 
+class DataVisitor {
+public:
+    virtual void visitIntTensor(IntTensor const &data) = 0;
+    virtual void visitFloatTensor(FloatTensor const &data) = 0;
+    virtual void visitBranch(Branch const &data) = 0;
+};
 
 #endif

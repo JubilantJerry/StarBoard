@@ -13,8 +13,8 @@ static inline FloatTensor * asFloatTensor(DataPtr &data) {
     return static_cast<FloatTensor *>(data.get());
 }
 
-static inline BranchObj * asBranch(DataPtr &data) {
-    return static_cast<BranchObj *>(data.get());
+static inline Branch * asBranch(DataPtr &data) {
+    return static_cast<Branch *>(data.get());
 }
 
 IntTensorR * inputMsg_getIntTensor(DataBlock *block) {
@@ -55,7 +55,7 @@ BranchRW * outputMsg_makeBranch(
         DataBlock *block, int outPortNum, int size) {
 
     DataPtr &output = block->outputMsgs_[outPortNum];
-    output = make_unique<BranchObj>(size);
+    output = make_unique<Branch>(size);
     return asBranch(output);
 }
 

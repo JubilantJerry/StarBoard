@@ -119,7 +119,7 @@ TEST_CASE("Create float tensor", "[data_interface]") {
 
 TEST_CASE("Create branches", "[data_interface]") {
     SECTION("Empty branch") {
-        BranchObj empty{0};
+        Branch empty{0};
         BranchR *branchR = &empty;
         BranchRW *branchRW = &empty;
 
@@ -129,7 +129,7 @@ TEST_CASE("Create branches", "[data_interface]") {
     }
 
     SECTION("Int / Float tuple as a branch") {
-        BranchObj branch{2};
+        Branch branch{2};
         BranchR *branchR;
         BranchRW *branchRW;
 
@@ -176,13 +176,13 @@ TEST_CASE("Create branches", "[data_interface]") {
         }
     }
 
-    SECTION("BranchObj containing empty branch") {
-        BranchObj branch{2};
+    SECTION("Branch containing empty branch") {
+        Branch branch{2};
         BranchR *branchR;
         BranchRW *branchRW;
 
         {
-            std::unique_ptr<BranchObj> branchEmpty = make_unique<BranchObj>(0);
+            std::unique_ptr<Branch> branchEmpty = make_unique<Branch>(0);
 
             branch.setValue(0, std::move(branchEmpty));
             branchR = &branch;
@@ -201,7 +201,7 @@ TEST_CASE("Create branches", "[data_interface]") {
     }
 
     SECTION("Modifying branches") {
-        BranchObj branch{1};
+        Branch branch{1};
         BranchRW *branchRW = &branch;
 
         IntTensorRW *intTensor;
@@ -246,7 +246,7 @@ TEST_CASE("Access data block", "[data_interface]") {
     {
         std::unique_ptr<IntTensor> intTensor;
         std::unique_ptr<FloatTensor> floatTensor;
-        std::unique_ptr<BranchObj> branch;
+        std::unique_ptr<Branch> branch;
 
         intTensor = make_unique<IntTensor>((NumSizes){2}, 1, 1);
         intTensor->contents()[0] = 5;
@@ -254,7 +254,7 @@ TEST_CASE("Access data block", "[data_interface]") {
         floatTensor = make_unique<FloatTensor>((NumSizes){3}, 1, 1, 1);
         floatTensor->contents()[0] = 6.0f;
 
-        branch = make_unique<BranchObj>(0);
+        branch = make_unique<Branch>(0);
 
         blocks[0].setInputMsg(std::move(intTensor));
         blocks[1].setInputMsg(std::move(floatTensor));

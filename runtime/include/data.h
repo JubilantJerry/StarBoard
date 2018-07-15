@@ -3,15 +3,6 @@
 
 #define APPEND_INDEX -1
 
-static void staticAsserts() {
-    (void)staticAsserts;
-    switch(0) {
-        case 0: break;
-        case (sizeof(int) == 4? 1 : 0): return;
-        case (sizeof(float) == 4? 2 : 0): return;
-    }
-}
-
 typedef struct NumSizes {
     int value;
 } NumSizes;

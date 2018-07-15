@@ -45,6 +45,11 @@ std::ostream& IntTensor::print(std::ostream &stream) const {
     return stream;
 }
 
+DataVisitor& IntTensor::requestVisit(DataVisitor &visitor) const {
+    visitor.visitIntTensor(*this);
+    return visitor;
+}
+
 inline void FloatTensor::fillSelf(
         NumSizes numSizesV, va_list sizesList) {
 
@@ -77,9 +82,19 @@ std::ostream& FloatTensor::print(std::ostream &stream) const {
     return stream;
 }
 
-std::ostream& BranchObj::print(std::ostream &stream) const {
+DataVisitor& FloatTensor::requestVisit(DataVisitor &visitor) const {
+    visitor.visitFloatTensor(*this);
+    return visitor;
+}
+
+std::ostream& Branch::print(std::ostream &stream) const {
     stream << values_;
     return stream;
+}
+
+DataVisitor& Branch::requestVisit(DataVisitor &visitor) const {
+    visitor.visitBranch(*this);
+    return visitor;
 }
 
 static inline IntTensor * asIntTensor(DataPtr &data) {
@@ -90,24 +105,24 @@ static inline FloatTensor * asFloatTensor(DataPtr &data) {
     return static_cast<FloatTensor *>(data.get());
 }
 
-static inline BranchObj * asBranch(DataPtr &data) {
-    return static_cast<BranchObj *>(data.get());
+static inline Branch * asBranch(DataPtr &data) {
+    return static_cast<Branch *>(data.get());
 }
 
-static inline BranchObj * accessBranchR(BranchR *branch) {
-    return static_cast<BranchObj *>(branch);
+static inline Branch * accessBranchR(BranchR *branch) {
+    return static_cast<Branch *>(branch);
 }
 
-static inline BranchObj * accessBranchRW(BranchRW *branch) {
-    return static_cast<BranchObj *>(branch);
+static inline Branch * accessBranchRW(BranchRW *branch) {
+    return static_cast<Branch *>(branch);
 }
 
 int branchR_getSize(BranchR *branch) {
-    return static_cast<BranchObj *>(branch)->size();
+    return static_cast<Branch *>(branch)->size();
 }
 
 int branchRW_getSize(BranchRW *branch) {
-    return static_cast<BranchObj *>(branch)->size();
+    return static_cast<Branch *>(branch)->size();
 }
 
 IntTensorR * branchR_getIntTensor(BranchR *branch, int index) {
@@ -137,7 +152,7 @@ BranchRW * branchRW_getBranch(BranchRW *branch, int index) {
 IntTensorRW * branchRW_makeIntTensor(
         BranchRW *branch, int indexInclAppend, NumSizes numSizesV, ...) {
 
-    BranchObj *branchObj = accessBranchRW(branch);
+    Branch *branchObj = accessBranchRW(branch);
     IntTensorRW *result;
 
     va_list sizesList;
@@ -158,7 +173,7 @@ IntTensorRW * branchRW_makeIntTensor(
 FloatTensorRW * branchRW_makeFloatTensor(
         BranchRW *branch, int indexInclAppend, NumSizes numSizesV, ...) {
 
-    BranchObj *branchObj = accessBranchRW(branch);
+    Branch *branchObj = accessBranchRW(branch);
     FloatTensorRW *result;
 
     va_list sizesList;
@@ -179,10 +194,10 @@ FloatTensorRW * branchRW_makeFloatTensor(
 BranchRW * branchRW_makeBranch(
         BranchRW *branch, int indexInclAppend, int size) {
 
-    BranchObj *branchObj = accessBranchRW(branch);
+    Branch *branchObj = accessBranchRW(branch);
     BranchRW *result;
 
-    DataPtr data = make_unique<BranchObj>(size);
+    DataPtr data = make_unique<Branch>(size);
     if (indexInclAppend == APPEND_INDEX) {
         branchObj->values_.push_back(std::move(data));
         result = asBranch(branchObj->values_.back());

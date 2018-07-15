@@ -1,8 +1,8 @@
 -- Touch up native interface for single message port
-Implement message block queues
+-- Implement message block queues
     Change dataptr to some dedicated message type
-Implement modules, and polymorphic data handlers in the modules
-Define specification format for module connections
+-- Implement modules, and polymorphic data handlers in the modules
+-- Define specification format for module connections
 Define basic network protocol
 Create internal format for module specification
 Implement worker, then the threads that run in it

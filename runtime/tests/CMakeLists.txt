@@ -10,8 +10,11 @@ add_library(add_one MODULE add_one.c)
 add_executable(tests test_main.cpp
     test_data.cpp
     test_foreign_call.cpp
+    test_data_serializer.cpp
     test_module_port_scheduler.cpp
-    test_module.cpp)
+    test_module.cpp
+)
+
 target_link_libraries(tests
     data
     data_interface
@@ -19,4 +22,5 @@ target_link_libraries(tests
     module_port_scheduler
     module
     ${CMAKE_THREAD_LIBS_INIT}
-    ${CMAKE_DL_LIBS})
+    ${CMAKE_DL_LIBS}
+)
