@@ -7,6 +7,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(data STATIC data.cpp)
 add_library(data_interface STATIC data_interface.cpp)
+add_library(data_serializer STATIC data_serializer.cpp)
+add_library(stream_handle STATIC stream_handle.cpp)
 add_library(native_loader STATIC native_loader.cpp)
 add_library(module_port_scheduler STATIC module_port_scheduler.cpp)
 add_library(module STATIC module.cpp)

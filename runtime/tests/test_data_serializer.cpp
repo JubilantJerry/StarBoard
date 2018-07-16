@@ -2,11 +2,12 @@
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
+#include "stream_handle.hpp"
 #include "data_serializer.hpp"
 
 TEST_CASE("Serialization of data") {
-    std::stringstream stream{};
-    DataSerializer<std::stringstream> serializer{stream};
+    StringStreamHandle stream{};
+    DataSerializer serializer{stream};
 
     std::unique_ptr<IntTensor> intTensor =
         make_unique<IntTensor>((NumSizes){2}, 1, 2);
@@ -70,7 +71,7 @@ TEST_CASE("Serialization of data") {
 }
 
 TEST_CASE("Serialization of messages") {
-    std::stringstream stream{};
+    StringStreamHandle stream{};
 
     std::unique_ptr<IntTensor> intTensor =
         make_unique<IntTensor>((NumSizes){1}, 1);

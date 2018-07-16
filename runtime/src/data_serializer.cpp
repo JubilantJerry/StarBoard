@@ -4,13 +4,12 @@
 #include "data_serializer.hpp"
 
 
-template<typename StreamType>
-static inline void serializeInt(StreamType &stream, int value) {
+static inline void serializeInt(StreamHandle &stream, int value) {
     stream.write((char const *)&value, sizeof(int));
 }
 
-template<typename StreamType, typename TensorType>
-static int serializeSizes(StreamType &stream, TensorType const &data) {
+template<typename StreamHandle, typename TensorType>
+static int serializeSizes(StreamHandle &stream, TensorType const &data) {
     int numSizes = data.numSizes();
     int const *sizes = data.sizes();
     int totalSize = 1;
@@ -26,23 +25,20 @@ static int serializeSizes(StreamType &stream, TensorType const &data) {
     return totalSize;
 }
 
-template<typename StreamType>
 static void serializePayload(
-        StreamType &stream, char const *payload, int size) {
+        StreamHandle &stream, char const *payload, int size) {
 
     stream.write(payload, size);
 }
 
-template<typename StreamType>
-static inline int deserializeInt(StreamType &stream) {
+static inline int deserializeInt(StreamHandle &stream) {
     int value;
     stream.read((char *)&value, sizeof(int));
     return value;
 }
 
-template<typename StreamType>
 static inline int deserializeSizes
-        (StreamType &stream, int &numSizes, std::unique_ptr<int[]> &sizes) {
+        (StreamHandle &stream, int &numSizes, std::unique_ptr<int[]> &sizes) {
 
     numSizes = deserializeInt(stream);
     sizes = make_unique<int[]>(numSizes);
@@ -57,13 +53,11 @@ static inline int deserializeSizes
     return totalSize;
 }
 
-template<typename StreamType>
-static void deserializePayload(StreamType &stream, char *payload, int size) {
+static void deserializePayload(StreamHandle &stream, char *payload, int size) {
     stream.read(payload, size);
 }
 
-template<typename StreamType>
-void DataSerializer<StreamType>::visitIntTensor(IntTensor const &data) {
+void DataSerializer::visitIntTensor(IntTensor const &data) {
     serializeInt(stream_, Keyword::INT_TENSOR);
 
     int totalSize = serializeSizes(stream_, data);
@@ -72,8 +66,7 @@ void DataSerializer<StreamType>::visitIntTensor(IntTensor const &data) {
         totalSize * sizeof(int));
 }
 
-template<typename StreamType>
-void DataSerializer<StreamType>::visitFloatTensor(FloatTensor const &data) {
+void DataSerializer::visitFloatTensor(FloatTensor const &data) {
     serializeInt(stream_, Keyword::FLOAT_TENSOR);
 
     int totalSize = serializeSizes(stream_, data);
@@ -82,8 +75,7 @@ void DataSerializer<StreamType>::visitFloatTensor(FloatTensor const &data) {
         totalSize * sizeof(float));
 }
 
-template<typename StreamType>
-void DataSerializer<StreamType>::visitBranch(Branch const &data) {
+void DataSerializer::visitBranch(Branch const &data) {
     serializeInt(stream_, Keyword::BRANCH);
 
     int size = data.size();
@@ -95,8 +87,7 @@ void DataSerializer<StreamType>::visitBranch(Branch const &data) {
     }
 }
 
-template<typename StreamType>
-DataPtr deserializeData(StreamType &stream) {
+DataPtr deserializeData(StreamHandle &stream) {
     Keyword dataType = static_cast<Keyword>(deserializeInt(stream));
 
     switch (dataType) {
@@ -148,14 +139,16 @@ DataPtr deserializeData(StreamType &stream) {
     }
 }
 
-template<typename StreamType>
-extern void serializeMessage(StreamType &stream, DataPtr const &message) {
+extern void serializeMessage(StreamHandle &stream, DataPtr const &message) {
+    serializeInt(stream, MAGIC_NUMBER);
     serializeInt(stream, Keyword::MESSAGE);
-    DataSerializer<StreamType>{stream} & *message;
+    DataSerializer{stream} & *message;
 }
 
-template<typename StreamType>
-extern DataPtr deserializeMessage(StreamType &stream) {
+extern DataPtr deserializeMessage(StreamHandle &stream) {
+    if (deserializeInt(stream) != MAGIC_NUMBER) {
+        throw std::runtime_error("Serializer version mismatch");
+    }
     if (deserializeInt(stream) != Keyword::MESSAGE) {
         throw std::runtime_error("Invalid serialization");
     }

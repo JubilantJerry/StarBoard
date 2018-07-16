@@ -1,12 +1,18 @@
-#ifndef THREADED_TEST_UTIL
-#define THREADED_TEST_UTIL
+#ifndef CATCH_TEST_UTIL_HPP
+#define CATCH_TEST_UTIL_HPP
 
+#include <string>
 #include <chrono>
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 #include "catch.hpp"
+
+#define BIN_DIR "build/bin/"
 
 class BooleanFlag {
 private:
@@ -45,20 +51,66 @@ public:
 
 using TicValue = std::chrono::system_clock::time_point;
 
-TicValue tic() {
+inline TicValue tic() {
     return std::chrono::system_clock::now();
 }
 
-long tocMs(TicValue ticValue) {
+inline long tocMs(TicValue ticValue) {
     using namespace std::chrono;
 
     return duration_cast<milliseconds>(system_clock::now() - ticValue).count();
 }
 
-long tocUs(TicValue ticValue) {
+inline long tocUs(TicValue ticValue) {
     using namespace std::chrono;
 
     return duration_cast<microseconds>(system_clock::now() - ticValue).count();
+}
+
+inline void childExit(int status) {
+    std::string childExitFile = BIN_DIR + std::string("child_exit");
+
+    char const *args[3] = {
+        childExitFile.c_str(),
+        std::to_string(status).c_str(),
+        nullptr
+    };
+
+    if (execvp(childExitFile.c_str(), (char **)args) == -1) {
+        exit(1);
+    }
+}
+
+template<typename ChildFunction, typename ParentFunction>
+inline void forkChild(
+        ChildFunction childFunction, ParentFunction parentFunction) {
+
+    int processId = fork();
+
+    if (processId == -1) {
+        FAIL("Fork unsuccessful");
+    } else if (processId == 0) {
+        try {
+            bool childSuccess = childFunction();
+            childExit(childSuccess ? 0 : 1);
+        } catch(...) {
+            childExit(1);
+        }
+    } else {
+        bool parentSuccess = parentFunction();
+
+        int waitStatus;
+
+        if (waitpid(processId, &waitStatus, 0) == -1) {
+            FAIL("Failed to wait for child process");
+        }
+
+        if (!WIFEXITED(waitStatus) || WEXITSTATUS(waitStatus) != 0) {
+            FAIL("Failure detected in child process");
+        }
+
+        REQUIRE(parentSuccess);
+    }
 }
 
 #endif

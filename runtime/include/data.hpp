@@ -10,10 +10,7 @@ extern "C" {
 #include "data.h"
 }
 
-class Data;
 class DataVisitor;
-
-using DataPtr = std::unique_ptr<Data>;
 
 class Data {
 protected:
@@ -44,6 +41,8 @@ public:
         return std::move(visitor);
     }
 };
+
+using DataPtr = std::unique_ptr<Data>;
 
 class IntTensor final: public Data {
 private:
@@ -217,6 +216,8 @@ public:
 
 class DataVisitor {
 public:
+    virtual ~DataVisitor() noexcept = default;
+
     virtual void visitIntTensor(IntTensor const &data) = 0;
     virtual void visitFloatTensor(FloatTensor const &data) = 0;
     virtual void visitBranch(Branch const &data) = 0;

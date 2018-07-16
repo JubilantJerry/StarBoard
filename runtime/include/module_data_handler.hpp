@@ -27,6 +27,8 @@ public:
     }
 
     virtual void receiveData(DataBlock &&block) = 0;
+
+    virtual ~ModuleDataHandler() noexcept = default;
 };
 
 class NativeModuleDataHandler: public ModuleDataHandler {
@@ -37,7 +39,7 @@ public:
     NativeModuleDataHandler(ModuleFunction native_handler)
             :native_handler_(native_handler) {}
 
-    virtual void receiveData(DataBlock &&block) override;     
+    virtual void receiveData(DataBlock &&block) override;   
 };
 
 #endif

@@ -3,7 +3,7 @@
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
-#include "threaded_test_util.hpp"
+#include "catch_test_util.hpp"
 #include "module_port_scheduler.hpp"
 
 TEST_CASE("Message queue functionality") {
