@@ -3,7 +3,9 @@
 
 #include <vector>
 #include <list>
+#include <atomic>
 #include <mutex>
+#include <condition_variable>
 #include <boost/circular_buffer.hpp>
 #include <boost/pool/pool_alloc.hpp>
 
@@ -48,7 +50,9 @@ private:
     std::vector<std::list<int>::iterator> pendingListIterators_;
 
     std::vector<MessageQueue> queues_;
-    std::mutex mutex_;
+    std::mutex lockMutex_;
+
+    std::condition_variable waitPendingCV_;
 
     void updateModulePortsPending(int modulePort);
 
@@ -90,7 +94,17 @@ public:
     }
 
     LockHandle lock() {
-        return LockHandle{mutex_};
+        return LockHandle{lockMutex_};
+    }
+
+    LockHandle waitPending() {
+        LockHandle schedulerLock = lock();
+
+        while (numModulePortsPending_ == 0) {
+            waitPendingCV_.wait(schedulerLock);
+        }
+
+        return schedulerLock;
     }
 };
 

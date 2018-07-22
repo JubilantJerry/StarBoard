@@ -27,6 +27,14 @@ private:
 
     friend class ModuleBuilder;
 public:
+    int offset() {
+        return offset_;
+    }
+
+    int numInputs() {
+        return dataHandlers_.size();
+    }
+
     void acquire(int modulePort, LockHandle lock);
     void release(int modulePort, DataBlock dataBlock);
 };

@@ -132,4 +132,30 @@ TEST_CASE("Basic properties of the scheduler") {
         schedulerLock.unlock();
         threadGotLock.waitForValue(true);
     }
+
+    SECTION("Will wait for a pending module port") {
+        BooleanFlag threadActive{false};
+        BooleanFlag threadGotLock{false};
+
+        LockHandle schedulerLock = scheduler.lock();
+        std::thread thread{[&] {
+            threadActive.setAndSignal(true);
+            
+            LockHandle schedulerLock = scheduler.waitPending();
+            
+            threadGotLock.setAndSignal(true);
+        }};
+        thread.detach();
+
+        schedulerLock.unlock();
+        threadActive.waitForValue(true);
+        REQUIRE(!threadGotLock.value());
+        
+        schedulerLock.lock();
+        scheduler.setDataReady(0, true);
+        scheduler.setModulePortReady(0, true);
+        schedulerLock.unlock();
+
+        threadGotLock.waitForValue(true);
+    }
 }

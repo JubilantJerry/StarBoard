@@ -1,12 +1,9 @@
+#include <stdexcept>
 #include <endian.h>
 #include <custom_utility.hpp>
 
+#include "stream_utils.hpp"
 #include "data_serializer.hpp"
-
-
-static inline void serializeInt(StreamHandle &stream, int value) {
-    stream.write((char const *)&value, sizeof(int));
-}
 
 template<typename StreamHandle, typename TensorType>
 static int serializeSizes(StreamHandle &stream, TensorType const &data) {
@@ -31,12 +28,6 @@ static void serializePayload(
     stream.write(payload, size);
 }
 
-static inline int deserializeInt(StreamHandle &stream) {
-    int value;
-    stream.read((char *)&value, sizeof(int));
-    return value;
-}
-
 static inline int deserializeSizes
         (StreamHandle &stream, int &numSizes, std::unique_ptr<int[]> &sizes) {
 
@@ -58,7 +49,7 @@ static void deserializePayload(StreamHandle &stream, char *payload, int size) {
 }
 
 void DataSerializer::visitIntTensor(IntTensor const &data) {
-    serializeInt(stream_, Keyword::INT_TENSOR);
+    serializeInt(stream_, StreamKeyword::INT_TENSOR);
 
     int totalSize = serializeSizes(stream_, data);
 
@@ -67,7 +58,7 @@ void DataSerializer::visitIntTensor(IntTensor const &data) {
 }
 
 void DataSerializer::visitFloatTensor(FloatTensor const &data) {
-    serializeInt(stream_, Keyword::FLOAT_TENSOR);
+    serializeInt(stream_, StreamKeyword::FLOAT_TENSOR);
 
     int totalSize = serializeSizes(stream_, data);
 
@@ -76,7 +67,7 @@ void DataSerializer::visitFloatTensor(FloatTensor const &data) {
 }
 
 void DataSerializer::visitBranch(Branch const &data) {
-    serializeInt(stream_, Keyword::BRANCH);
+    serializeInt(stream_, StreamKeyword::BRANCH);
 
     int size = data.size();
 
@@ -88,10 +79,11 @@ void DataSerializer::visitBranch(Branch const &data) {
 }
 
 DataPtr deserializeData(StreamHandle &stream) {
-    Keyword dataType = static_cast<Keyword>(deserializeInt(stream));
+    StreamKeyword dataType =
+        static_cast<StreamKeyword>(deserializeInt(stream));
 
     switch (dataType) {
-        case Keyword::INT_TENSOR: {
+        case StreamKeyword::INT_TENSOR: {
             int numSizes;
             std::unique_ptr<int[]> sizes;
 
@@ -107,7 +99,7 @@ DataPtr deserializeData(StreamHandle &stream) {
                 IntTensorM{numSizes, sizes.release(), contents.release()});
         }
 
-        case Keyword::FLOAT_TENSOR: {
+        case StreamKeyword::FLOAT_TENSOR: {
             int numSizes;
             std::unique_ptr<int[]> sizes;
 
@@ -123,7 +115,7 @@ DataPtr deserializeData(StreamHandle &stream) {
                 FloatTensorM{numSizes, sizes.release(), contents.release()});
         }
 
-        case Keyword::BRANCH: {
+        case StreamKeyword::BRANCH: {
             int size = deserializeInt(stream);
 
             std::unique_ptr<Branch> data = make_unique<Branch>(size);
@@ -137,20 +129,4 @@ DataPtr deserializeData(StreamHandle &stream) {
 
         default: throw std::runtime_error("Invalid serialization");
     }
-}
-
-extern void serializeMessage(StreamHandle &stream, DataPtr const &message) {
-    serializeInt(stream, MAGIC_NUMBER);
-    serializeInt(stream, Keyword::MESSAGE);
-    DataSerializer{stream} & *message;
-}
-
-extern DataPtr deserializeMessage(StreamHandle &stream) {
-    if (deserializeInt(stream) != MAGIC_NUMBER) {
-        throw std::runtime_error("Serializer version mismatch");
-    }
-    if (deserializeInt(stream) != Keyword::MESSAGE) {
-        throw std::runtime_error("Invalid serialization");
-    }
-    return deserializeData(stream);
 }

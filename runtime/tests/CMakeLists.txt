@@ -14,6 +14,7 @@ add_executable(tests test_main.cpp
     test_foreign_call.cpp
     test_module_port_scheduler.cpp
     test_module.cpp
+    test_stream_protocol.cpp
 )
 
 add_executable(child_exit child_exit.c)
@@ -26,6 +27,7 @@ target_link_libraries(tests
     native_loader
     module_port_scheduler
     module
+    stream_protocol
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
 )

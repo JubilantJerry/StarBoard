@@ -22,10 +22,14 @@ void ModulePortScheduler::updateModulePortsPending(int modulePort) {
         dataReady_[modulePort] && modulePortReady_[modulePort]);
 
     if (nowPending && !wasPending) {
+        if (numModulePortsPending_ == 0) {
+            waitPendingCV_.notify_one();
+        }
         modulePortPending_[modulePort] = true;
         numModulePortsPending_ += 1;
         pendingList_.emplace_back(modulePort);
         pendingListIterators_[modulePort] = --pendingList_.end();
+
     } else if (!nowPending && wasPending) {
         modulePortPending_[modulePort] = false;
         numModulePortsPending_ -= 1;

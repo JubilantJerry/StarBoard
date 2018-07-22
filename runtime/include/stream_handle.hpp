@@ -56,4 +56,29 @@ public:
     virtual void read(char *data, int count);
 };
 
+class StreamException: public std::exception {
+private:
+    std::string exceptionText_;
+
+public:
+    StreamException(std::string errorHeader, std::string explanation)
+        : exceptionText_(errorHeader + ": " + explanation) {}
+
+    virtual char const *what() const noexcept final {
+        return exceptionText_.c_str();
+    }
+};
+
+class StreamInitializationException: public StreamException {
+public:
+    StreamInitializationException(std::string explanation)
+        : StreamException("Stream initialization failure", explanation) {}
+};
+
+class StreamInterruptedException: public StreamException {
+public:
+    StreamInterruptedException(std::string explanation)
+        : StreamException("Stream interrupted", explanation) {}
+};
+
 #endif

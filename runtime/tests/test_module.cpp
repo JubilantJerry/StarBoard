@@ -25,6 +25,23 @@ public:
     }
 };
 
+TEST_CASE("Module basic accessors") {
+    ModulePortScheduler scheduler{3, 5};
+    std::stringstream log;
+    ModuleDataHandlerPtr moduleHandler =
+        make_unique<LoggingDataHandler>("A", log);
+
+    ModuleBuilder moduleBuilder;
+    moduleBuilder
+        .setOffset(2)
+        .addInputMessagePort(std::move(moduleHandler));
+
+    Module module = moduleBuilder.build(scheduler);
+
+    REQUIRE(module.offset() == 2);
+    REQUIRE(module.numInputs() == 1);
+}
+
 TEST_CASE("Module correctly offloading functionality") {
     ModulePortScheduler scheduler{3, 5};
     std::stringstream log;

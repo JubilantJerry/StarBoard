@@ -1,10 +1,24 @@
+#include <iostream>
+#include <stdexcept>
+#include <chrono>
+#include <thread>
 #include <custom_utility.hpp>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "stream_handle.hpp"
+
+int constexpr INIT_WAIT_US = 10;
+int constexpr WAIT_MULTIPLIER = 2;
+int constexpr MAX_WAIT_US = 1000000;
+
+static void *disableSIGPIPE = []() {
+    sigignore(SIGPIPE);
+    return nullptr;
+}();
 
 StreamHandlePtr LocalStreamHandle::serverEnd(std::string endpointName) {
     int listenFd = -1;
@@ -41,26 +55,49 @@ StreamHandlePtr LocalStreamHandle::serverEnd(std::string endpointName) {
     if (listenFd != -1) {
         close(listenFd);
     }
-    throw std::runtime_error(
-        "Failed to create socket: " + std::string(strerror(errno)));
+    throw StreamInitializationException(std::string(strerror(errno)));
+}
+
+static void sleepUs(int us) {
+    std::this_thread::sleep_for(std::chrono::microseconds(us));
 }
 
 StreamHandlePtr LocalStreamHandle::clientEnd(std::string endpointName) {
     int connectionFd = -1;
     struct sockaddr_un address{};
+    bool successfulConnect = false;
+    int waitUs = 0;
 
-    connectionFd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (connectionFd == -1) {
-        goto error;
-    }
+    while (!successfulConnect) {
+        connectionFd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (connectionFd == -1) {
+            goto error;
+        }
 
-    address.sun_family = AF_UNIX;
-    strncpy(address.sun_path + 1, endpointName.c_str(),
-            sizeof(address.sun_path) - 2);
+        address.sun_family = AF_UNIX;
+        strncpy(address.sun_path + 1, endpointName.c_str(),
+                sizeof(address.sun_path) - 2);
 
-    if (connect(connectionFd, (struct sockaddr*)&address,
-                sizeof(address)) == -1) {
-        goto error;
+        if (connect(connectionFd, (struct sockaddr*)&address,
+                    sizeof(address)) == -1) {
+            if (errno != ECONNREFUSED) {
+                goto error;
+            } else {
+                close(connectionFd);
+                sleepUs(waitUs);
+                
+                if (waitUs == 0) {
+                    waitUs = INIT_WAIT_US;
+                } else {
+                    waitUs *= WAIT_MULTIPLIER;
+                    if (waitUs > MAX_WAIT_US) {
+                        waitUs = MAX_WAIT_US;
+                    }
+                }
+            }
+        } else {
+            successfulConnect = true;
+        }
     }
 
     return StreamHandlePtr{new LocalStreamHandle{connectionFd}};
@@ -69,14 +106,18 @@ StreamHandlePtr LocalStreamHandle::clientEnd(std::string endpointName) {
     if (connectionFd != -1) {
         close(connectionFd);
     }
-    throw std::runtime_error(
-        "Failed to create socket: " + std::string(strerror(errno)));
+    throw StreamInitializationException(std::string(strerror(errno)));
 }
 
 void LocalStreamHandle::write(char const *data, int count) {
     while (count != 0) {
         using ::write;
         int bytesWritten = write(connectionFd_, data, count);
+
+        if (bytesWritten == -1) {
+            throw StreamInterruptedException(std::string(strerror(errno)));
+        }
+
         data += bytesWritten;
         count -= bytesWritten;
     }
@@ -86,6 +127,11 @@ void LocalStreamHandle::read(char *data, int count) {
     while (count != 0) {
         using ::read;
         int bytesRead = read(connectionFd_, data, count);
+
+        if (bytesRead == -1) {
+            throw StreamInterruptedException(std::string(strerror(errno)));
+        }
+
         data += bytesRead;
         count -= bytesRead;
     }
@@ -94,7 +140,6 @@ void LocalStreamHandle::read(char *data, int count) {
 LocalStreamHandle::~LocalStreamHandle() {
     int result = close(connectionFd_);
     if (result == -1) {
-        throw std::runtime_error(
-            "Socket shutdown failure: " + std::string(strerror(errno)));
+        throw StreamInterruptedException(std::string(strerror(errno)));
     }
 }

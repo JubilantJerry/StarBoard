@@ -1,8 +1,11 @@
 #ifndef CATCH_TEST_UTIL_HPP
 #define CATCH_TEST_UTIL_HPP
 
+#include <iostream>
 #include <string>
+#include <exception>
 #include <chrono>
+#include <thread>
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
@@ -67,6 +70,10 @@ inline long tocUs(TicValue ticValue) {
     return duration_cast<microseconds>(system_clock::now() - ticValue).count();
 }
 
+inline void sleepMs(int ms) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
 inline void childExit(int status) {
     std::string childExitFile = BIN_DIR + std::string("child_exit");
 
@@ -83,7 +90,8 @@ inline void childExit(int status) {
 
 template<typename ChildFunction, typename ParentFunction>
 inline void forkChild(
-        ChildFunction childFunction, ParentFunction parentFunction) {
+        ChildFunction childFunction, ParentFunction parentFunction,
+        int timeOutMs = 1000) {
 
     int processId = fork();
 
@@ -91,9 +99,20 @@ inline void forkChild(
         FAIL("Fork unsuccessful");
     } else if (processId == 0) {
         try {
+            std::thread thread{[&] {
+                sleepMs(timeOutMs);
+                childExit(1);
+            }};
+            thread.detach();
+
             bool childSuccess = childFunction();
             childExit(childSuccess ? 0 : 1);
-        } catch(...) {
+
+        } catch(std::exception const &e) {
+            std::cout << "Child exception: " << e.what() << std::endl;
+            childExit(1);
+        } catch (...) {
+            std::cout << "Child exception: [unknown]" << std::endl;
             childExit(1);
         }
     } else {
