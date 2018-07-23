@@ -24,7 +24,7 @@ inline void IntTensor::fillSelf(
 }
 
 IntTensor::IntTensor(NumSizes numSizesV, ...)
-        : IntTensor() {
+    : IntTensor() {
 
     va_list sizesList;
     va_start(sizesList, numSizesV);
@@ -33,7 +33,7 @@ IntTensor::IntTensor(NumSizes numSizesV, ...)
 }
 
 IntTensor::IntTensor(NumSizes numSizesV, va_list sizesList)
-        : IntTensor() {
+    : IntTensor() {
 
     fillSelf(numSizesV, sizesList);
 }
@@ -59,7 +59,7 @@ inline void FloatTensor::fillSelf(
 }
 
 FloatTensor::FloatTensor(NumSizes numSizesV, ...)
-        : FloatTensor() {
+    : FloatTensor() {
 
     va_list sizesList;
     va_start(sizesList, numSizesV);
@@ -68,7 +68,7 @@ FloatTensor::FloatTensor(NumSizes numSizesV, ...)
 }
 
 FloatTensor::FloatTensor(NumSizes numSizesV, va_list sizesList)
-        : FloatTensor() {
+    : FloatTensor() {
 
     fillSelf(numSizesV, sizesList);
 }

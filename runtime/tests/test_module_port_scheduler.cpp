@@ -17,7 +17,7 @@ TEST_CASE("Message queue functionality") {
         intTensors[i] = std::move(result);
     }
 
-    SECTION("Not reaching capacity") {
+    SECTION("Message queue not reaching capacity") {
         REQUIRE(queue.size() == 0);
         queue.enqueue(std::move(intTensors[0]));
         queue.enqueue(std::move(intTensors[1]));
@@ -28,7 +28,7 @@ TEST_CASE("Message queue functionality") {
             intTensors[0].get())->contents()[0] == 0);
     }
 
-    SECTION("Reaching capacity") {
+    SECTION("Message queue reaching capacity") {
         queue.enqueue(std::move(intTensors[0]));
         queue.enqueue(std::move(intTensors[1]));
         queue.enqueue(std::move(intTensors[2]));
@@ -40,69 +40,70 @@ TEST_CASE("Message queue functionality") {
 }
 
 TEST_CASE("Basic properties of the scheduler") {
-    ModulePortScheduler scheduler{3, 2};
+    ModulePortScheduler scheduler{2, 1, 5, {0, 0}};
 
-    SECTION("Initial setup") {
+    SECTION("Scheduler initial setup") {
+        REQUIRE(scheduler.numModulePorts() == 2);
         REQUIRE(scheduler.numDataReady() == 0);
-        REQUIRE(scheduler.numModulePortsReady() == 3);
+        REQUIRE(scheduler.numModulePortsReady() == 2);
         REQUIRE(scheduler.numModulePortsPending() == 0);
     }
 
-    SECTION("Values update based on data and module readiness") {
+    SECTION("Scheduler values update based on data and module readiness") {
         scheduler.setDataReady(0, true);
         REQUIRE(scheduler.numDataReady() == 1);
-        REQUIRE(scheduler.numModulePortsReady() == 3);
+        REQUIRE(scheduler.numModulePortsReady() == 2);
         REQUIRE(scheduler.numModulePortsPending() == 1);
 
         scheduler.setModulePortReady(1, false);
         REQUIRE(scheduler.numDataReady() == 1);
-        REQUIRE(scheduler.numModulePortsReady() == 2);
+        REQUIRE(scheduler.numModulePortsReady() == 1);
         REQUIRE(scheduler.numModulePortsPending() == 1);
 
         scheduler.setModulePortReady(0, false);
         REQUIRE(scheduler.numDataReady() == 1);
-        REQUIRE(scheduler.numModulePortsReady() == 1);
+        REQUIRE(scheduler.numModulePortsReady() == 0);
         REQUIRE(scheduler.numModulePortsPending() == 0);
 
         scheduler.setModulePortReady(1, true);
         REQUIRE(scheduler.numDataReady() == 1);
-        REQUIRE(scheduler.numModulePortsReady() == 2);
+        REQUIRE(scheduler.numModulePortsReady() == 1);
         REQUIRE(scheduler.numModulePortsPending() == 0);
 
         scheduler.setModulePortReady(0, true);
         REQUIRE(scheduler.numDataReady() == 1);
-        REQUIRE(scheduler.numModulePortsReady() == 3);
+        REQUIRE(scheduler.numModulePortsReady() == 2);
         REQUIRE(scheduler.numModulePortsPending() == 1);
 
         scheduler.setDataReady(0, false);
         REQUIRE(scheduler.numDataReady() == 0);
-        REQUIRE(scheduler.numModulePortsReady() == 3);
+        REQUIRE(scheduler.numModulePortsReady() == 2);
         REQUIRE(scheduler.numModulePortsPending() == 0);
     }
 
-    SECTION("Next module identified correctly") {
+    SECTION("Scheduler next module identified correctly") {
         scheduler.setDataReady(0, true);
-        REQUIRE(scheduler.nextModulePort() == 0);
+        REQUIRE(scheduler.nextModulePort(0) == 0);
 
         scheduler.setDataReady(0, false);
         scheduler.setDataReady(1, true);
-        REQUIRE(scheduler.nextModulePort() == 1);
+        REQUIRE(scheduler.nextModulePort(0) == 1);
     }
 
-    SECTION("Next module accessed in round robin fashion") {
+    SECTION("Scheduler next module accessed in round robin fashion") {
         scheduler.setDataReady(0, true);
         scheduler.setDataReady(1, true);
-        REQUIRE(scheduler.nextModulePort() == 0);
-        REQUIRE(scheduler.nextModulePort() == 1);
-        REQUIRE(scheduler.nextModulePort() == 0);
-        REQUIRE(scheduler.nextModulePort() == 1);
+        REQUIRE(scheduler.nextModulePort(0) == 0);
+        REQUIRE(scheduler.nextModulePort(0) == 1);
+        REQUIRE(scheduler.nextModulePort(0) == 0);
+        REQUIRE(scheduler.nextModulePort(0) == 1);
 
         scheduler.setModulePortReady(0, false);
-        REQUIRE(scheduler.nextModulePort() == 1);
-        REQUIRE(scheduler.nextModulePort() == 1);
+        REQUIRE(scheduler.nextModulePort(0) == 1);
+        REQUIRE(scheduler.nextModulePort(0) == 1);
     }
 
-    SECTION("Contains message queues") {
+    SECTION("Scheduler contains message queues") {
         {
             MessageQueue &queue = scheduler.getQueue(0);
             queue.enqueue(DataPtr{});
@@ -113,39 +114,39 @@ TEST_CASE("Basic properties of the scheduler") {
         }
     }
 
-    SECTION("Can be locked") {
+    SECTION("Scheduler can be locked") {
         BooleanFlag threadActive{false};
         BooleanFlag threadGotLock{false};
 
-        LockHandle schedulerLock = scheduler.lock();
+        LockHandle schedulerLock = scheduler.lock(0);
         std::thread thread{[&] {
             threadActive.setAndSignal(true);
             
-            LockHandle schedulerLock = scheduler.lock();
+            LockHandle schedulerLock = scheduler.lock(0);
             
             threadGotLock.setAndSignal(true);
         }};
-        thread.detach();
 
         threadActive.waitForValue(true);
         REQUIRE(!threadGotLock.value());
+
         schedulerLock.unlock();
         threadGotLock.waitForValue(true);
+        thread.join();
     }
 
-    SECTION("Will wait for a pending module port") {
+    SECTION("Scheduler will wait for a pending module port") {
         BooleanFlag threadActive{false};
         BooleanFlag threadGotLock{false};
 
-        LockHandle schedulerLock = scheduler.lock();
+        LockHandle schedulerLock = scheduler.lock(0);
         std::thread thread{[&] {
             threadActive.setAndSignal(true);
             
-            LockHandle schedulerLock = scheduler.waitPending();
+            LockHandle schedulerLock = scheduler.waitPending(0);
             
             threadGotLock.setAndSignal(true);
         }};
-        thread.detach();
 
         schedulerLock.unlock();
         threadActive.waitForValue(true);
@@ -157,5 +158,33 @@ TEST_CASE("Basic properties of the scheduler") {
         schedulerLock.unlock();
 
         threadGotLock.waitForValue(true);
+        thread.join();
+    }
+}
+
+TEST_CASE("Multiple pending queue scheduler") {
+    ModulePortScheduler scheduler{2, 2, 5, {0, 1}};
+    scheduler.setDataReady(0, true);
+    scheduler.setDataReady(1, true);
+
+    SECTION("Scheduler pending queues are scheduled separately") {
+        REQUIRE(scheduler.nextModulePort(0) == 0);
+        REQUIRE(scheduler.nextModulePort(0) == 0);
+
+        REQUIRE(scheduler.nextModulePort(1) == 1);
+        REQUIRE(scheduler.nextModulePort(1) == 1);
+    }
+
+    SECTION("Scheduler pending queues are locked separately") {
+        BooleanFlag threadGotLock{false};
+
+        std::thread thread{[&] {
+            LockHandle schedulerLock = scheduler.lock(0);
+            threadGotLock.setAndSignal(true);
+        }};
+
+        LockHandle schedulerLock = scheduler.lock(1);
+        threadGotLock.waitForValue(true);
+        thread.join();
     }
 }

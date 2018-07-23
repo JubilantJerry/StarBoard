@@ -8,11 +8,11 @@
 TEST_CASE("Serialization of module port numbers") {
     StringStreamHandle stream{};
 
-    int modulePortNum = 72;
-    serializeModulePortNum(stream, modulePortNum);
+    int modulePort = 72;
+    sendModulePort(stream, modulePort);
 
-    int receivedModulePortNum = deserializeModulePortNum(stream);
-    REQUIRE(receivedModulePortNum == modulePortNum);
+    int receivedModulePortNum = receiveModulePort(stream);
+    REQUIRE(receivedModulePortNum == modulePort);
 }
 
 TEST_CASE("Serialization of messages") {
@@ -23,9 +23,9 @@ TEST_CASE("Serialization of messages") {
     intTensor->contents()[0] = 3;
     DataPtr message{std::move(intTensor)};
 
-    serializeMessage(stream, message);
+    sendMessage(stream, message);
 
-    DataPtr receivedData = deserializeMessage(stream);
+    DataPtr receivedData = receiveMessage(stream);
     IntTensor &receivedIntData =
             *dynamic_cast<IntTensor *>(receivedData.get());
 

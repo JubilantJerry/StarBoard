@@ -8,19 +8,19 @@ static inline void checkMagicNumber(StreamHandle &stream) {
     }
 }
 
-void serializeModulePortNum(StreamHandle &stream, int modulePort) {
+void sendModulePort(StreamHandle &stream, int modulePort) {
     serializeInt(stream, MAGIC_NUMBER);
     serializeInt(stream, StreamKeyword::MODULE_PORT_NUM);
     serializeInt(stream, modulePort);
 }
 
-void serializeMessage(StreamHandle &stream, DataPtr const &message) {
+void sendMessage(StreamHandle &stream, DataPtr const &message) {
     serializeInt(stream, MAGIC_NUMBER);
     serializeInt(stream, StreamKeyword::MESSAGE);
     DataSerializer{stream} & *message;
 }
 
-DataPtr deserializeMessage(StreamHandle &stream) {
+DataPtr receiveMessage(StreamHandle &stream) {
     checkMagicNumber(stream);
 
     if (deserializeInt(stream) != StreamKeyword::MESSAGE) {
@@ -30,7 +30,7 @@ DataPtr deserializeMessage(StreamHandle &stream) {
     return deserializeData(stream);
 }
 
-int deserializeModulePortNum(StreamHandle &stream) {
+int receiveModulePort(StreamHandle &stream) {
     checkMagicNumber(stream);
 
     if (deserializeInt(stream) != StreamKeyword::MODULE_PORT_NUM) {

@@ -7,16 +7,16 @@
 
 #define MAGIC_NUMBER 0x005A6A53
 
-extern void serializeModulePortNum(StreamHandle &stream, int modulePort);
+extern void sendModulePort(StreamHandle &stream, int modulePort);
 
-extern int deserializeModulePortNum(StreamHandle &stream);
+extern int receiveModulePort(StreamHandle &stream);
 
-extern void serializeMessage(StreamHandle &stream, DataPtr const &message);
+extern void sendMessage(StreamHandle &stream, DataPtr const &message);
 
-extern DataPtr deserializeMessage(StreamHandle &stream);
+extern DataPtr receiveMessage(StreamHandle &stream);
 
-extern void serializeDataBlock(StreamHandle &stream, DataBlock const &block);
+extern void sendDataBlock(StreamHandle &stream, DataBlock const &block);
 
-extern DataBlock deserializeDataBlock(StreamHandle &stream);
+extern DataBlock receiveDataBlock(StreamHandle &stream);
 
 #endif

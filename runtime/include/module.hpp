@@ -5,44 +5,46 @@
 
 #include "data_interface.hpp"
 #include "module_port_scheduler.hpp"
-
-class ModuleDataHandler;
+#include "module_data_handler.hpp"
 
 using ModuleDataHandlerPtr = std::unique_ptr<ModuleDataHandler>;
 
 class Module final {
 private:
-    ModulePortScheduler &scheduler_;
+    ModulePortScheduler *scheduler_;
 
     int offset_;
-    std::vector<ModuleDataHandlerPtr> dataHandlers_;
+    int numInputs_;
     std::vector<int> outModulePorts_;
 
-    Module(ModulePortScheduler &scheduler,
+    Module(ModulePortScheduler *scheduler,
            int offset,
-           std::vector<ModuleDataHandlerPtr> &&dataHandlers,
+           int numInputs,
            std::vector<int> &&outModulePorts);
 
     void testInputRange(int modulePort);
 
     friend class ModuleBuilder;
+
 public:
-    int offset() {
+    Module() {};
+
+    int offset() const noexcept {
         return offset_;
     }
 
-    int numInputs() {
-        return dataHandlers_.size();
+    int numInputs() const noexcept {
+        return numInputs_;
     }
 
-    void acquire(int modulePort, LockHandle lock);
+    DataBlock acquire(int modulePort, LockHandle lock);
     void release(int modulePort, DataBlock dataBlock);
 };
 
 class ModuleBuilder final {
 private:
     int offset_;
-    std::vector<ModuleDataHandlerPtr> dataHandlers_;
+    int numInputs_;
     std::vector<int> outModulePorts_;
 public:
     ModuleBuilder & setOffset(int offset) {
@@ -50,10 +52,8 @@ public:
         return *this;
     }
 
-    ModuleBuilder & addInputMessagePort(
-            ModuleDataHandlerPtr &&moduleDataHandler) {
-
-        dataHandlers_.push_back(std::move(moduleDataHandler));
+    ModuleBuilder & addInputMessagePort() {
+        numInputs_ += 1;
         return *this;
     }
 
@@ -64,9 +64,9 @@ public:
 
     Module build(ModulePortScheduler &scheduler) {
         return Module{
-            scheduler,
+            &scheduler,
             offset_,
-            std::move(dataHandlers_),
+            numInputs_,
             std::move(outModulePorts_)
         };
     }

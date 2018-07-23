@@ -47,6 +47,7 @@ using ModuleFunction = void(*)(DataBlock *);
 class NativeLoader {
 private:
     std::unordered_map<std::string, SmartLibraryHandle> handles;
+
 public:
     ModuleFunction load(
             std::string const &libraryPath,

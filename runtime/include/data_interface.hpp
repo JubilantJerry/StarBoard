@@ -41,6 +41,8 @@ private:
         DataBlock *block, int outPortNum);
 
 public:
+    DataBlock(): DataBlock(0) {}
+
     DataBlock(int numOutputs);
 
     int numOutputs() {

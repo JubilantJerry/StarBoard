@@ -1,12 +1,11 @@
-#include <iostream>
+#include <string>
 #include <utility>
 #include <custom_utility.hpp>
 
 #include "catch.hpp"
+#include "catch_test_util.hpp"
 #include "data_interface.hpp"
 #include "native_loader.hpp"
-
-#define LIB_DIR "build/lib/"
 
 TEST_CASE("Call foreign addOne function") {
     DataBlock block{1};
@@ -21,9 +20,10 @@ TEST_CASE("Call foreign addOne function") {
     }
 
     NativeLoader loader{};
-    ModuleFunction function = loader.load(
-        LIB_DIR, "add_one", "addOne");
-    function(blockPtr);
+    std::string libDir = buildDir + "lib/";
+    ModuleFunction addOne = loader.load(
+        libDir, "add_one", "addOne");
+    addOne(blockPtr);
 
     {
         IntTensor *intTensor = (IntTensor *)(

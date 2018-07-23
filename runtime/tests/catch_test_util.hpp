@@ -15,7 +15,7 @@
 
 #include "catch.hpp"
 
-#define BIN_DIR "build/bin/"
+extern std::string const buildDir;
 
 class BooleanFlag {
 private:
@@ -31,21 +31,9 @@ private:
 public:
     BooleanFlag(bool value): flagLock_(flagMutex_), flag_(value) {}
 
-    void setAndSignal(bool value) {
-        std::lock_guard<std::mutex> lock{flagMutex_};
-        flag_.store(value);
-        flagCV_.notify_all();
-    }
+    void setAndSignal(bool value);
 
-    void waitForValue(bool value, int timeOutMs = 1000) {
-        time_point startTime = system_clock::now();
-        while (flag_.load() != value) {
-            flagCV_.wait_for(flagLock_, milliseconds(timeOutMs));
-            if (system_clock::now() - startTime > milliseconds(timeOutMs)) {
-                FAIL("Timed out waiting for flag");
-            }
-        }
-    }
+    void waitForValue(bool value, int timeOutMs = 1000);
 
     bool value() {
         return flag_.load();
@@ -74,24 +62,16 @@ inline void sleepMs(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-inline void childExit(int status) {
-    std::string childExitFile = BIN_DIR + std::string("child_exit");
+extern void childExit(int status);
 
-    char const *args[3] = {
-        childExitFile.c_str(),
-        std::to_string(status).c_str(),
-        nullptr
-    };
-
-    if (execvp(childExitFile.c_str(), (char **)args) == -1) {
-        exit(1);
-    }
+static void killHandler(int) {
+    childExit(0);
 }
 
 template<typename ChildFunction, typename ParentFunction>
-inline void forkChild(
+void forkChild(
         ChildFunction childFunction, ParentFunction parentFunction,
-        int timeOutMs = 1000) {
+        bool killChild = false, int timeOutMs = 1000) {
 
     int processId = fork();
 
@@ -99,6 +79,10 @@ inline void forkChild(
         FAIL("Fork unsuccessful");
     } else if (processId == 0) {
         try {
+            if (killChild) {
+                signal(SIGUSR1, &killHandler);
+            }
+
             std::thread thread{[&] {
                 sleepMs(timeOutMs);
                 childExit(1);
@@ -117,6 +101,10 @@ inline void forkChild(
         }
     } else {
         bool parentSuccess = parentFunction();
+
+        if (killChild) {
+            kill(processId, SIGUSR1);
+        }
 
         int waitStatus;
 

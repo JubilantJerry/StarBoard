@@ -34,7 +34,41 @@ public:
     }
 };
 
+
 using LockHandle = std::unique_lock<std::mutex>;
+
+
+class SchedulingQueue {
+private:
+    std::list<int, boost::fast_pool_allocator<int>> queue_;
+
+public:
+    using QueuePlace = std::list<int>::const_iterator;
+
+    int size() const {
+        return queue_.size();
+    }
+
+    QueuePlace enqueue(int value) {
+        queue_.push_back(value);
+        return --queue_.end();
+    }
+
+    int dequeue() {
+        int value = queue_.front();
+        queue_.pop_front();
+        return value;
+    }
+
+    void remove(QueuePlace place) {
+        queue_.erase(place);
+    }
+
+    QueuePlace end() const {
+        return queue_.end();
+    }
+};
+
 
 class ModulePortScheduler {
 private:
@@ -46,18 +80,25 @@ private:
     std::vector<int> modulePortReady_;
     std::vector<int> modulePortPending_;
 
-    std::list<int, boost::fast_pool_allocator<int>> pendingList_;
-    std::vector<std::list<int>::iterator> pendingListIterators_;
+    std::vector<int> pendingQueueAssignment_;
+    std::vector<SchedulingQueue> pendingQueues_;
+    std::vector<SchedulingQueue::QueuePlace> pendingQueuePlaces_;
 
     std::vector<MessageQueue> queues_;
-    std::mutex lockMutex_;
 
-    std::condition_variable waitPendingCV_;
+    std::vector<std::mutex> lockMutexes_;
+    std::vector<std::condition_variable> waitPendingCVs_;
 
     void updateModulePortsPending(int modulePort);
 
 public:
-    ModulePortScheduler(int numModules, int maxQueueSize);
+    ModulePortScheduler(
+        int numModulePorts, int numPendingQueues, int maxQueueSize,
+        std::vector<int> &&pendingQueueAssignment);
+
+    int numModulePorts() noexcept {
+        return queues_.size();
+    }
 
     int numDataReady() noexcept {
         return numDataReady_;
@@ -87,21 +128,26 @@ public:
 
     void setModulePortReady(int modulePort, bool value);
 
-    int nextModulePort();
+    int nextModulePort(int queueNum);
+
+    int pendingQueueAssignment(int modulePort) {
+        return pendingQueueAssignment_[modulePort];
+    }
 
     MessageQueue &getQueue(int modulePort) {
         return queues_[modulePort];
     }
 
-    LockHandle lock() {
-        return LockHandle{lockMutex_};
+    LockHandle lock(int queueNumber) {
+        return LockHandle{lockMutexes_[queueNumber]};
     }
 
-    LockHandle waitPending() {
-        LockHandle schedulerLock = lock();
+    LockHandle waitPending(int queueNumber) {
+        LockHandle schedulerLock = lock(queueNumber);
+        SchedulingQueue &pendingQueue = pendingQueues_[queueNumber];
 
-        while (numModulePortsPending_ == 0) {
-            waitPendingCV_.wait(schedulerLock);
+        while (pendingQueue.size() == 0) {
+            waitPendingCVs_[queueNumber].wait(schedulerLock);
         }
 
         return schedulerLock;

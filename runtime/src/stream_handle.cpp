@@ -4,6 +4,7 @@
 #include <thread>
 #include <custom_utility.hpp>
 #include <unistd.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <stdlib.h>
@@ -12,8 +13,9 @@
 #include "stream_handle.hpp"
 
 int constexpr INIT_WAIT_US = 10;
-int constexpr WAIT_MULTIPLIER = 2;
-int constexpr MAX_WAIT_US = 1000000;
+int constexpr CONNECT_SLEEP_MULTIPLIER = 2;
+int constexpr CONNECT_MAX_SLEEP_US = 1000000;
+int constexpr SEND_MAX_WAIT_S = 1;
 
 static void *disableSIGPIPE = []() {
     sigignore(SIGPIPE);
@@ -24,6 +26,7 @@ StreamHandlePtr LocalStreamHandle::serverEnd(std::string endpointName) {
     int listenFd = -1;
     int connectionFd = -1;
     struct sockaddr_un address{};
+    struct timeval sendTimeout{};
 
     listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (listenFd == -1) {
@@ -48,12 +51,20 @@ StreamHandlePtr LocalStreamHandle::serverEnd(std::string endpointName) {
         goto error;
     }
 
+    sendTimeout.tv_sec = SEND_MAX_WAIT_S;
+    setsockopt(
+        connectionFd, SOL_SOCKET, SO_SNDTIMEO,
+        &sendTimeout, sizeof(sendTimeout));
+
     close(listenFd);
     return StreamHandlePtr{new LocalStreamHandle{connectionFd}};
 
     error:
     if (listenFd != -1) {
         close(listenFd);
+    }
+    if (connectionFd != -1) {
+        close(connectionFd);
     }
     throw StreamInitializationException(std::string(strerror(errno)));
 }
@@ -66,7 +77,7 @@ StreamHandlePtr LocalStreamHandle::clientEnd(std::string endpointName) {
     int connectionFd = -1;
     struct sockaddr_un address{};
     bool successfulConnect = false;
-    int waitUs = 0;
+    int connectSleepUs = 0;
 
     while (!successfulConnect) {
         connectionFd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -84,14 +95,14 @@ StreamHandlePtr LocalStreamHandle::clientEnd(std::string endpointName) {
                 goto error;
             } else {
                 close(connectionFd);
-                sleepUs(waitUs);
+                sleepUs(connectSleepUs);
                 
-                if (waitUs == 0) {
-                    waitUs = INIT_WAIT_US;
+                if (connectSleepUs == 0) {
+                    connectSleepUs = INIT_WAIT_US;
                 } else {
-                    waitUs *= WAIT_MULTIPLIER;
-                    if (waitUs > MAX_WAIT_US) {
-                        waitUs = MAX_WAIT_US;
+                    connectSleepUs *= CONNECT_SLEEP_MULTIPLIER;
+                    if (connectSleepUs > CONNECT_MAX_SLEEP_US) {
+                        connectSleepUs = CONNECT_MAX_SLEEP_US;
                     }
                 }
             }
@@ -106,12 +117,15 @@ StreamHandlePtr LocalStreamHandle::clientEnd(std::string endpointName) {
     if (connectionFd != -1) {
         close(connectionFd);
     }
+
     throw StreamInitializationException(std::string(strerror(errno)));
 }
 
 void LocalStreamHandle::write(char const *data, int count) {
     while (count != 0) {
         using ::write;
+
+        checkDisabled();
         int bytesWritten = write(connectionFd_, data, count);
 
         if (bytesWritten == -1) {
@@ -126,6 +140,8 @@ void LocalStreamHandle::write(char const *data, int count) {
 void LocalStreamHandle::read(char *data, int count) {
     while (count != 0) {
         using ::read;
+
+        checkDisabled();
         int bytesRead = read(connectionFd_, data, count);
 
         if (bytesRead == -1) {
@@ -137,9 +153,20 @@ void LocalStreamHandle::read(char *data, int count) {
     }
 }
 
-LocalStreamHandle::~LocalStreamHandle() {
+void LocalStreamHandle::disable() noexcept {
+    StreamHandle::disable();
     int result = close(connectionFd_);
+    connectionFd_ = -1;
     if (result == -1) {
         throw StreamInterruptedException(std::string(strerror(errno)));
+    }
+}
+
+LocalStreamHandle::~LocalStreamHandle() {
+    if (connectionFd_ != -1) {
+        int result = close(connectionFd_);
+        if (result == -1) {
+            throw StreamInterruptedException(std::string(strerror(errno)));
+        }
     }
 }

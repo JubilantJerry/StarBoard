@@ -1,4 +1,3 @@
-#include <sstream>
 #include <memory>
 #include <utility>
 #include <custom_utility.hpp>
@@ -6,49 +5,21 @@
 #include "catch.hpp"
 #include "data_interface.hpp"
 #include "module.hpp"
-#include "module_data_handler.hpp"
-
-
-class LoggingDataHandler: public ModuleDataHandler {
-private:
-    std::string tag_;
-    std::stringstream &log_;
-
-public:
-    LoggingDataHandler(std::string tag, std::stringstream &log)
-            : tag_(tag), log_(log) {}
-
-    void receiveData(DataBlock &&block) {
-        log_ << "Port " << tag_ << " received data: " <<
-            outputMsg_moveIntTensor(&block, 0)->contents[0] << "\n";
-        module()->release(modulePort(), std::move(block));
-    }
-};
 
 TEST_CASE("Module basic accessors") {
-    ModulePortScheduler scheduler{3, 5};
-    std::stringstream log;
-    ModuleDataHandlerPtr moduleHandler =
-        make_unique<LoggingDataHandler>("A", log);
+    ModulePortScheduler scheduler{3, 1, 5, {0, 0, 0}};
 
-    ModuleBuilder moduleBuilder;
-    moduleBuilder
+    Module module = ModuleBuilder{}
         .setOffset(2)
-        .addInputMessagePort(std::move(moduleHandler));
-
-    Module module = moduleBuilder.build(scheduler);
+        .addInputMessagePort()
+        .build(scheduler);
 
     REQUIRE(module.offset() == 2);
     REQUIRE(module.numInputs() == 1);
 }
 
 TEST_CASE("Module correctly offloading functionality") {
-    ModulePortScheduler scheduler{3, 5};
-    std::stringstream log;
-    ModuleDataHandlerPtr moduleHandlers[2] = {
-        make_unique<LoggingDataHandler>("A", log),
-        make_unique<LoggingDataHandler>("B", log)
-    };
+    ModulePortScheduler scheduler{3, 1, 5, {0, 0, 0}};
 
     DataPtr intTensors[2] = {
         make_unique<IntTensor>(NumSizes{1}, 1),
@@ -63,32 +34,41 @@ TEST_CASE("Module correctly offloading functionality") {
     scheduler.setDataReady(2, true);
 
     SECTION("Two port module with no resource requirements") {
-        ModuleBuilder moduleBuilder;
-        moduleBuilder
+        Module module = ModuleBuilder{}
             .setOffset(1)
-            .addInputMessagePort(std::move(moduleHandlers[0]))
-            .addInputMessagePort(std::move(moduleHandlers[1]))
-            .addOutputMessagePort(0);
+            .addInputMessagePort()
+            .addInputMessagePort()
+            .addOutputMessagePort(0)
+            .build(scheduler);
 
-        Module module = moduleBuilder.build(scheduler);
-        LockHandle schedulerLock;
+        {
+            LockHandle schedulerLock = scheduler.lock(0);
+            REQUIRE(scheduler.modulePortPending(1));
+            DataBlock block = module.acquire(1, std::move(schedulerLock));
 
-        schedulerLock = scheduler.lock();
-        REQUIRE(scheduler.modulePortPending(1));
-        module.acquire(1, std::move(schedulerLock));
-        REQUIRE(!scheduler.dataReady(1));
-        REQUIRE(scheduler.modulePortReady(1));
+            REQUIRE(!scheduler.dataReady(1));
+            REQUIRE(scheduler.modulePortReady(1));
+            REQUIRE(inputMsg_getIntTensor(&block)->contents[0] == 7);
 
-        schedulerLock = scheduler.lock();
-        REQUIRE(scheduler.modulePortPending(2));
-        module.acquire(2, std::move(schedulerLock));
-        REQUIRE(!scheduler.dataReady(2));
-        REQUIRE(scheduler.modulePortReady(2));
+            outputMsg_makeIntTensor(&block, 0, NumSizes{1}, 1);
+            module.release(1, std::move(block));
+        }
+
+        {
+            LockHandle schedulerLock = scheduler.lock(0);
+            REQUIRE(scheduler.modulePortPending(2));
+            DataBlock block = module.acquire(2, std::move(schedulerLock));
+
+            REQUIRE(!scheduler.dataReady(2));
+            REQUIRE(scheduler.modulePortReady(2));
+            REQUIRE(inputMsg_getIntTensor(&block)->contents[0] == 13);
+
+            outputMsg_makeIntTensor(&block, 0, NumSizes{1}, 1);
+            module.release(1, std::move(block));
+        }
 
         REQUIRE(scheduler.getQueue(0).size() == 2);
         REQUIRE(scheduler.dataReady(0));
-        REQUIRE(log.str() == "Port A received data: 7\n"
-                             "Port B received data: 13\n");
     }
     
 
