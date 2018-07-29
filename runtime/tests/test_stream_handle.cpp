@@ -27,7 +27,7 @@ TEST_CASE("Local stream handle") {
         handle->read((char *)&receiveData, sizeof(int));
         
         return (receiveData == sendData);
-    }, [&] {
+    }, [&](int) {
         handle = LocalStreamHandle::serverEnd(endpointName);
 
         handle->write((char const *)&sendData, sizeof(int));

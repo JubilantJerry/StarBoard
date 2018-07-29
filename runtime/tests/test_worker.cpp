@@ -21,7 +21,6 @@ TEST_CASE("Minimal worker process") {
 
     NativeLoader loader{};
     std::string libDir = buildDir + "lib/";
-    ModuleFunction addOne = loader.load(libDir, "add_one", "addOne");
     
     Module module = ModuleBuilder{}
         .setOffset(0)
@@ -29,35 +28,96 @@ TEST_CASE("Minimal worker process") {
         .addOutputMessagePort(1)
         .build(scheduler);
 
-    Worker worker{
-        scheduler,
-        {module},
-        {addOne, nullptr},
-        std::move(properties)
-    };
+    SECTION("Minimal worker add one") {
+        ModuleFunction addOne = loader.load(libDir, "add_one", "addOne");
 
-    forkChild(
-    [&] {
-        worker.run();
-        return true;
-    }, [&] {
-        StreamHandlePtr worldStream = LocalStreamHandle::clientEnd(
-            workerName + WORLD_ENDPOINT_SUFFIX);
+        Worker worker{
+            scheduler,
+            {module},
+            {addOne, nullptr},
+            std::move(properties)
+        };
 
-        DataPtr data = make_unique<IntTensor>(NumSizes{1}, 1);
-        IntTensor &intData =
-            *dynamic_cast<IntTensor *>(data.get());
-        intData.contents()[0] = 12;
+        forkChild(
+        [&] {
+            worker.run();
+            return true;
+        }, [&](int) {
+            StreamHandlePtr worldStream = LocalStreamHandle::clientEnd(
+                workerName + WORLD_ENDPOINT_SUFFIX);
 
-        sendModulePort(*worldStream, 0);
-        sendMessage(*worldStream, data);
+            DataPtr data = make_unique<IntTensor>(NumSizes{1}, 1);
+            IntTensor &intData =
+                *dynamic_cast<IntTensor *>(data.get());
+            intData.contents()[0] = 12;
 
-        int receivedModulePort = receiveModulePort(*worldStream);
-        DataPtr receivedData = receiveMessage(*worldStream);
-        IntTensor &receivedIntData =
-            *dynamic_cast<IntTensor *>(receivedData.get());
+            sendModulePort(*worldStream, 0);
+            sendMessage(*worldStream, data);
 
-        return (receivedModulePort == 1) &&
-            (receivedIntData.contents()[0] == intData.contents()[0] + 1);
-    }, true);
+            int receivedModulePort = receiveModulePort(*worldStream);
+            DataPtr receivedData = receiveMessage(*worldStream);
+            IntTensor &receivedIntData =
+                *dynamic_cast<IntTensor *>(receivedData.get());
+
+            return (receivedModulePort == 1) &&
+                (receivedIntData.contents()[0] == intData.contents()[0] + 1);
+        }, true);
+    }
+
+    SECTION("Minimal worker drops under high load") {
+        ModuleFunction slowNop = loader.load(libDir, "slow_nop", "slowNop");
+
+        Worker worker{
+            scheduler,
+            {module},
+            {slowNop, nullptr},
+            std::move(properties)
+        };
+
+        forkChild(
+        [&] {
+            worker.run();
+            return true;
+        }, [&](int) {
+            StreamHandlePtr worldStream = LocalStreamHandle::clientEnd(
+                workerName + WORLD_ENDPOINT_SUFFIX);
+
+            DataPtr data = make_unique<IntTensor>(NumSizes{1}, 1);
+            static_cast<IntTensor *>(data.get())->contents()[0] = 0;
+
+            sendModulePort(*worldStream, 0);
+            sendMessage(*worldStream, data);
+            receiveModulePort(*worldStream);
+            receiveMessage(*worldStream);
+
+            for (int i = 0; i < 7; i++) {
+                data = make_unique<IntTensor>(NumSizes{1}, 1);
+                static_cast<IntTensor *>(data.get())->contents()[0] = i;
+                sendModulePort(*worldStream, 0);
+                sendMessage(*worldStream, data);
+            }
+
+            bool allCorrect = true;
+            bool firstValue = true;
+            for (int i = 0; i < 7; i++) {
+                receiveModulePort(*worldStream);
+                data = receiveMessage(*worldStream);
+                int receivedValue = static_cast<IntTensor *>(
+                    data.get())->contents()[0];
+
+                if (firstValue && receivedValue == 0) {
+                    // 0 was processed but 1 is skipped
+                    i = 1;
+                    firstValue = false;
+                    continue;
+                } else if (firstValue && receivedValue == 2) {
+                    // 0 and 1 were skipped
+                    i = 2;
+                }
+                allCorrect &= (receivedValue == i);
+                firstValue = false;
+            }
+            return allCorrect;
+        }, true);
+    }
 }

@@ -3,11 +3,11 @@
     Change dataptr to some dedicated message type
 -- Implement modules, and polymorphic data handlers in the modules
 -- Define specification format for module connections
-Define basic network protocol
-Create internal format for module specification
-Implement worker, then the threads that run in it
-Test with stream of +1
-Test dropping with slow ops
+-- Define basic network protocol
+-- Create internal format for module specification
+-- Implement worker, then the threads that run in it
+-- Test with stream of +1
+-- Test dropping with slow ops
 Create double buffering structure for continuous ports
 Add continuous ports to data block
 Define specification format for module sensitivity to continuous port changes
@@ -32,4 +32,5 @@ Test op defined in Python
 Implement multithreaded worker
 Test multithreaded +1 with spin inside
 Create textual format for module specification
+Defensive preventing clients from doing things twice
 

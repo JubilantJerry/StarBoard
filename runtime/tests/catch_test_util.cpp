@@ -49,3 +49,18 @@ void childExit(int status) {
         exit(1);
     }
 }
+
+static void sendSignalAndWaitChild(int childPid, int signum) {
+    if (kill(childPid, signum) == -1) {
+        throw std::runtime_error("Could not signal child");
+    }
+    waitpid(childPid, NULL, WUNTRACED | WCONTINUED);
+}
+
+void suspendChild(int childPid) {
+    sendSignalAndWaitChild(childPid, SIGKILL);
+}
+
+void resumeChild(int childPid) {
+    sendSignalAndWaitChild(childPid, SIGCONT);
+}

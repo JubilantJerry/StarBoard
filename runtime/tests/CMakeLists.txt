@@ -6,6 +6,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(add_one MODULE add_one.c)
+add_library(slow_nop MODULE slow_nop.c)
 
 add_executable(tests test_main.cpp catch_test_util.cpp
     test_data.cpp

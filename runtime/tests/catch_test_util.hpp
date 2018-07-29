@@ -68,6 +68,10 @@ static void killHandler(int) {
     childExit(0);
 }
 
+void suspendChild(int childPid);
+
+void resumeChild(int childPid);
+
 template<typename ChildFunction, typename ParentFunction>
 void forkChild(
         ChildFunction childFunction, ParentFunction parentFunction,
@@ -100,7 +104,7 @@ void forkChild(
             childExit(1);
         }
     } else {
-        bool parentSuccess = parentFunction();
+        bool parentSuccess = parentFunction(processId);
 
         if (killChild) {
             kill(processId, SIGUSR1);
