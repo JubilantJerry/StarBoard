@@ -10,6 +10,7 @@ add_library(slow_nop MODULE slow_nop.c)
 
 add_executable(tests test_main.cpp catch_test_util.cpp
     test_data.cpp
+    test_data_reference.cpp
     test_data_serializer.cpp
     test_stream_handle.cpp
     test_foreign_call.cpp
@@ -23,6 +24,7 @@ add_executable(child_exit child_exit.c)
 
 target_link_libraries(tests
     data
+    data_reference
     data_interface
     data_serializer
     stream_handle

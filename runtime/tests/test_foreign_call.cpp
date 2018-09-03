@@ -8,7 +8,7 @@
 #include "native_loader.hpp"
 
 TEST_CASE("Call foreign addOne function") {
-    DataBlock block{1};
+    DataBlock block{1, 0};
     DataBlock *blockPtr = &block;
     int origValue = 1337;
 

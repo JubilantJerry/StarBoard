@@ -240,8 +240,8 @@ TEST_CASE("Create branches", "[data_interface]") {
     }
 }
 
-TEST_CASE("Access data block", "[data_interface]") {
-    DataBlock blocks[3]{{1}, {1}, {1}};
+TEST_CASE("Data block basic access", "[data_interface]") {
+    DataBlock blocks[3]{{1, 0}, {1, 0}, {1, 0}};
 
     {
         std::unique_ptr<IntTensor> intTensor;
@@ -302,5 +302,87 @@ TEST_CASE("Access data block", "[data_interface]") {
 
         branch = outputMsg_moveBranch(&blocks[2], 0);
         REQUIRE(branchRW_getSize(branch) == 0);
+    }
+}
+
+TEST_CASE("Data block continuous data access", "[data_interface]") {
+    DataBlock block{0, 1};
+    IntTensorRW *intTensor;
+    FloatTensorRW *floatTensor;
+    BranchRW *branch;
+    DataSharedPtr readback; 
+
+    SECTION("Data block writing continuous data") {
+        intTensor = contData_writeIntTensor(&block, 0, (NumSizes){1}, 1);
+        intTensor->contents[0] = 3;
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<IntTensor *>(readback.get())
+            ->contents()[0] == 3);
+
+        intTensor = contData_writeIntTensor(&block, 0, (NumSizes){1}, 1);
+        intTensor->contents[0] = 4;
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<IntTensor *>(readback.get())
+            ->contents()[0] == 4);
+
+        {
+            DataBlock block{0, 1};
+
+            floatTensor = contData_writeFloatTensor(
+                &block, 0, (NumSizes){1}, 1);
+            floatTensor->contents[0] = 4.0f;
+            block.finalize();
+            readback = block.getContData(0);
+            REQUIRE(dynamic_cast<FloatTensor *>(readback.get())
+                ->contents()[0] == 4.0f);
+        }
+
+        {
+            DataBlock block{0, 1};
+            branch = contData_writeBranch(&block, 0, 0);
+            block.finalize();
+            readback = block.getContData(0);
+            REQUIRE(dynamic_cast<Branch *>(readback.get()) == branch);
+        }
+    }
+
+    SECTION("Data block setting continuous data") {
+        intTensor = contData_setIntTensor(&block, 0, (NumSizes){1}, 1);
+        intTensor->contents[0] = 3;
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<IntTensor *>(readback.get())
+            ->contents()[0] == 3);
+
+        intTensor = contData_setIntTensor(&block, 0, (NumSizes){1}, 2);
+        block.finalize();
+        REQUIRE(intTensor->sizes[0] == 2);
+
+        floatTensor = contData_setFloatTensor(
+            &block, 0, (NumSizes){1}, 1);
+        floatTensor->contents[0] = 4.0f;
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<FloatTensor *>(readback.get())
+            ->contents()[0] == 4.0f);
+
+        branch = contData_setBranch(&block, 0, 0);
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<Branch *>(readback.get()) == branch);
+    }
+
+    SECTION("Data block finalizing and reading continuous data") {
+        REQUIRE(contData_getBranch(&block, 0) == NULL);
+
+        contData_writeBranch(&block, 0, 0);
+
+        REQUIRE(contData_getBranch(&block, 0) == NULL);
+
+        block.finalize();
+
+        REQUIRE(branchR_getSize(contData_getBranch(&block, 0)) == 0);
     }
 }

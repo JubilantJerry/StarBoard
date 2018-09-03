@@ -43,6 +43,7 @@ public:
 };
 
 using DataPtr = std::unique_ptr<Data>;
+using DataSharedPtr = std::shared_ptr<Data>;
 
 class IntTensor final: public Data {
 private:

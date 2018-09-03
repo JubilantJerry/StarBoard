@@ -33,6 +33,33 @@ FloatTensorRW * outputMsg_moveFloatTensor(
 BranchRW * outputMsg_moveBranch(
         DataBlock *block, int outPortNum);
 
+IntTensorR * contData_getIntTensor(
+        DataBlock *block, int contDataNum);
+
+FloatTensorR * contData_getFloatTensor(
+        DataBlock *block, int contDataNum);
+
+BranchR * contData_getBranch(
+        DataBlock *block, int outPortNum);
+
+IntTensorRW * contData_setIntTensor(
+        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+
+FloatTensorRW * contData_setFloatTensor(
+        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+
+BranchRW * contData_setBranch(
+        DataBlock *block, int outPortNum, int size);
+
+IntTensorRW * contData_writeIntTensor(
+        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+
+FloatTensorRW * contData_writeFloatTensor(
+        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+
+BranchRW * contData_writeBranch(
+        DataBlock *block, int outPortNum, int size);
+
 #define INDEX(sizes, indices...) \
     __INDEX_DISPATCH(indices, \
         __INDEX_8, __INDEX_7, __INDEX_6, __INDEX_5, \

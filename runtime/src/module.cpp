@@ -28,7 +28,7 @@ DataBlock Module::acquire(int modulePort, LockHandle lock) {
     lock.unlock();
 
     int numOutputs = outModulePorts_.size();
-    DataBlock dataBlock{numOutputs};
+    DataBlock dataBlock{numOutputs, 0};
     dataBlock.setInputMsg(std::move(data));
     return dataBlock;
 }
