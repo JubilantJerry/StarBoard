@@ -17,7 +17,7 @@ class DataBlock final {
 private:
     DataPtr inputMsg_;
     std::vector<DataPtr> outputMsgs_;
-    std::vector<DataReference> contData_;
+    std::vector<DataReference *> contData_;
     std::unordered_set<int> contDataWritten_;
 
     friend IntTensorR * inputMsg_getIntTensor(
@@ -90,8 +90,12 @@ public:
         return std::move(outputMsgs_[outPortNum]);
     }
 
+    void setContData(int contDataNum, DataReference *dataRef) noexcept {
+        contData_[contDataNum] = dataRef;
+    }
+
     DataSharedPtr getContData(int contDataNum) noexcept {
-        return contData_[contDataNum].readAcquire();
+        return contData_[contDataNum]->readAcquire();
     }
 
     void finalize() {
@@ -100,7 +104,7 @@ public:
         IterT end = contDataWritten_.end();
 
         for (IterT it = contDataWritten_.begin(); it != end; it++) {
-            contData_[*it].writeFinalize();
+            contData_[*it]->writeFinalize();
         }
         contDataWritten_.clear();
     }

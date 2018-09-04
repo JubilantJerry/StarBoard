@@ -7,17 +7,15 @@
 #include "module_port_scheduler.hpp"
 #include "module_data_handler.hpp"
 
-using ModuleDataHandlerPtr = std::unique_ptr<ModuleDataHandler>;
-
 class Module final {
 private:
-    ModulePortScheduler *scheduler_;
+    ModulePortScheduler &scheduler_;
 
     int offset_;
     int numInputs_;
     std::vector<int> outModulePorts_;
 
-    Module(ModulePortScheduler *scheduler,
+    Module(ModulePortScheduler &scheduler,
            int offset,
            int numInputs,
            std::vector<int> &&outModulePorts);
@@ -27,8 +25,6 @@ private:
     friend class ModuleBuilder;
 
 public:
-    Module() {};
-
     int offset() const noexcept {
         return offset_;
     }
@@ -64,7 +60,7 @@ public:
 
     Module build(ModulePortScheduler &scheduler) {
         return Module{
-            &scheduler,
+            scheduler,
             offset_,
             numInputs_,
             std::move(outModulePorts_)

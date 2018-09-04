@@ -11,12 +11,12 @@ TEST_CASE("Create integer tensor", "[data_interface]") {
         REQUIRE(intTensor.numSizes() == 0);
     }
 
-    SECTION("Size 2 tensor") {
+    SECTION("Size 2 integer tensor") {
         IntTensor intTensor{(NumSizes){1}, 2};
         IntTensorR *intTensorR = &intTensor.getR();
         IntTensorRW *intTensorRW = &intTensor.getRW();
 
-        SECTION("Tensor check size") {
+        SECTION("Integer tensor check size") {
             REQUIRE(intTensor.numSizes() == 1);
             REQUIRE(intTensor.sizes()[0] == 2);
             REQUIRE(intTensorR->numSizes == 1);
@@ -25,7 +25,7 @@ TEST_CASE("Create integer tensor", "[data_interface]") {
             REQUIRE(intTensorRW->sizes[0] == 2);
         }
 
-        SECTION("Write & read") {
+        SECTION("Integer tensor write & read") {
             int *rw = intTensorRW->contents;
             rw[0] = 5;
             rw[1] = 6;
@@ -36,12 +36,12 @@ TEST_CASE("Create integer tensor", "[data_interface]") {
         }
     }
 
-    SECTION("Size (2, 3) tensor") {
+    SECTION("Size (2, 3) integer tensor") {
         IntTensor intTensor{(NumSizes){2}, 2, 3};
         IntTensorR *intTensorR = &intTensor.getR();
         IntTensorRW *intTensorRW = &intTensor.getRW();
 
-        SECTION("Tensor check size") {
+        SECTION("Integer tensor check size") {
             REQUIRE(intTensor.numSizes() == 2);
             REQUIRE(intTensor.sizes()[0] == 2);
             REQUIRE(intTensor.sizes()[1] == 3);
@@ -53,7 +53,7 @@ TEST_CASE("Create integer tensor", "[data_interface]") {
             REQUIRE(intTensorRW->sizes[1] == 3);
         }
 
-        SECTION("Write & read") {
+        SECTION("Integer tensor write & read") {
             int const *s = intTensorRW->sizes;
             int *rw = intTensorRW->contents;
             rw[INDEX(s, 0, 0)] = 0;
@@ -77,12 +77,12 @@ TEST_CASE("Create float tensor", "[data_interface]") {
         REQUIRE(floatTensor.numSizes() == 0);
     }
 
-    SECTION("Size (2, 2, 2) tensor") {
+    SECTION("Size (2, 2, 2) float tensor") {
         FloatTensor floatTensor{(NumSizes){3}, 2, 2, 2};
         FloatTensorR *floatTensorR = &floatTensor.getR();
         FloatTensorRW *floatTensorRW = &floatTensor.getRW();
 
-        SECTION("Tensor check size") {
+        SECTION("Float tensor check size") {
             REQUIRE(floatTensor.numSizes() == 3);
             REQUIRE(floatTensor.sizes()[0] == 2);
             REQUIRE(floatTensor.sizes()[1] == 2);
@@ -97,7 +97,7 @@ TEST_CASE("Create float tensor", "[data_interface]") {
             REQUIRE(floatTensorRW->sizes[2] == 2);
         }
 
-        SECTION("Write & read") {
+        SECTION("Float tensor write & read") {
             int const *s = floatTensorRW->sizes;
             float *rw = floatTensorRW->contents;
             rw[INDEX(s, 0, 0, 0)] = 0.0f;
@@ -261,7 +261,7 @@ TEST_CASE("Data block basic access", "[data_interface]") {
         blocks[2].setInputMsg(std::move(branch));
     }
 
-    SECTION("Access input values") {
+    SECTION("Access data block input values") {
         IntTensorR *intTensor;
         FloatTensorR *floatTensor;
         BranchR *branch;
@@ -278,7 +278,7 @@ TEST_CASE("Data block basic access", "[data_interface]") {
         REQUIRE(branchR_getSize(branch) == 0);
     }
 
-    SECTION("Create output values") {
+    SECTION("Create data block output values") {
         IntTensorRW *intTensor;
         FloatTensorRW *floatTensor;
         BranchRW *branch;
@@ -307,10 +307,14 @@ TEST_CASE("Data block basic access", "[data_interface]") {
 
 TEST_CASE("Data block continuous data access", "[data_interface]") {
     DataBlock block{0, 1};
+
+    std::unique_ptr<DataReference> dataRef = make_unique<DataReference>();
+    block.setContData(0, dataRef.get());
+
     IntTensorRW *intTensor;
     FloatTensorRW *floatTensor;
     BranchRW *branch;
-    DataSharedPtr readback; 
+    DataSharedPtr readback;
 
     SECTION("Data block writing continuous data") {
         intTensor = contData_writeIntTensor(&block, 0, (NumSizes){1}, 1);
@@ -327,25 +331,21 @@ TEST_CASE("Data block continuous data access", "[data_interface]") {
         REQUIRE(dynamic_cast<IntTensor *>(readback.get())
             ->contents()[0] == 4);
 
-        {
-            DataBlock block{0, 1};
+        dataRef = make_unique<DataReference>();
+        block.setContData(0, dataRef.get());
+        floatTensor = contData_writeFloatTensor(&block, 0, (NumSizes){1}, 1);
+        floatTensor->contents[0] = 4.0f;
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<FloatTensor *>(readback.get())
+            ->contents()[0] == 4.0f);
 
-            floatTensor = contData_writeFloatTensor(
-                &block, 0, (NumSizes){1}, 1);
-            floatTensor->contents[0] = 4.0f;
-            block.finalize();
-            readback = block.getContData(0);
-            REQUIRE(dynamic_cast<FloatTensor *>(readback.get())
-                ->contents()[0] == 4.0f);
-        }
-
-        {
-            DataBlock block{0, 1};
-            branch = contData_writeBranch(&block, 0, 0);
-            block.finalize();
-            readback = block.getContData(0);
-            REQUIRE(dynamic_cast<Branch *>(readback.get()) == branch);
-        }
+        dataRef = make_unique<DataReference>();
+        block.setContData(0, dataRef.get());
+        branch = contData_writeBranch(&block, 0, 0);
+        block.finalize();
+        readback = block.getContData(0);
+        REQUIRE(dynamic_cast<Branch *>(readback.get()) == branch);
     }
 
     SECTION("Data block setting continuous data") {
@@ -360,8 +360,7 @@ TEST_CASE("Data block continuous data access", "[data_interface]") {
         block.finalize();
         REQUIRE(intTensor->sizes[0] == 2);
 
-        floatTensor = contData_setFloatTensor(
-            &block, 0, (NumSizes){1}, 1);
+        floatTensor = contData_setFloatTensor(&block, 0, (NumSizes){1}, 1);
         floatTensor->contents[0] = 4.0f;
         block.finalize();
         readback = block.getContData(0);
@@ -375,11 +374,11 @@ TEST_CASE("Data block continuous data access", "[data_interface]") {
     }
 
     SECTION("Data block finalizing and reading continuous data") {
-        REQUIRE(contData_getBranch(&block, 0) == NULL);
+        REQUIRE(contData_getBranch(&block, 0) == nullptr);
 
         contData_writeBranch(&block, 0, 0);
 
-        REQUIRE(contData_getBranch(&block, 0) == NULL);
+        REQUIRE(contData_getBranch(&block, 0) == nullptr);
 
         block.finalize();
 

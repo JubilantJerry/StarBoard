@@ -87,15 +87,15 @@ BranchRW * outputMsg_moveBranch(
 }
 
 IntTensorR * contData_getIntTensor(DataBlock *block, int contDataNum) {
-    return &asIntTensor(block->contData_[contDataNum].readAcquire())->getR();
+    return &asIntTensor(block->contData_[contDataNum]->readAcquire())->getR();
 }
 
 FloatTensorR * contData_getFloatTensor(DataBlock *block, int contDataNum) {
-    return &asFloatTensor(block->contData_[contDataNum].readAcquire())->getR();
+    return &asFloatTensor(block->contData_[contDataNum]->readAcquire())->getR();
 }
 
 BranchR * contData_getBranch(DataBlock *block, int contDataNum) {
-    return asBranch(block->contData_[contDataNum].readAcquire());
+    return asBranch(block->contData_[contDataNum]->readAcquire());
 }
 
 IntTensorRW * contData_setIntTensor(
@@ -108,7 +108,7 @@ IntTensorRW * contData_setIntTensor(
     DataPtr output = make_unique<IntTensor>(numSizesV, sizesList);
     va_end(sizesList);
 
-    return &asIntTensor(block->contData_[contDataNum].setWriteAcquire(
+    return &asIntTensor(block->contData_[contDataNum]->setWriteAcquire(
         std::move(output)))->getRW();
 }
 
@@ -121,7 +121,7 @@ FloatTensorRW * contData_setFloatTensor(
     va_start(sizesList, numSizesV);
     DataPtr output = make_unique<FloatTensor>(numSizesV, sizesList);
     va_end(sizesList);
-    return &asFloatTensor(block->contData_[contDataNum].setWriteAcquire(
+    return &asFloatTensor(block->contData_[contDataNum]->setWriteAcquire(
         std::move(output)))->getRW();
 }
 
@@ -131,7 +131,7 @@ BranchRW * contData_setBranch(
     block->contDataWritten_.insert(contDataNum);
 
     DataPtr output = make_unique<Branch>(size);
-    return asBranch(block->contData_[contDataNum].setWriteAcquire(
+    return asBranch(block->contData_[contDataNum]->setWriteAcquire(
         std::move(output)));
 }
 
@@ -139,17 +139,17 @@ IntTensorRW * contData_writeIntTensor(
         DataBlock *block, int contDataNum, NumSizes numSizesV, ...) {
 
     block->contDataWritten_.insert(contDataNum);
-    DataReference &dataRef = block->contData_[contDataNum];
+    DataReference *dataRef = block->contData_[contDataNum];
 
-    if (dataRef.canDirectWriteAcquire()) {
-        return &asIntTensor(dataRef.directWriteAcquire())->getRW();
+    if (dataRef->canDirectWriteAcquire()) {
+        return &asIntTensor(dataRef->directWriteAcquire())->getRW();
     } else {
         va_list sizesList;
         va_start(sizesList, numSizesV);
         DataPtr output = make_unique<IntTensor>(numSizesV, sizesList);
         va_end(sizesList);
 
-        return &asIntTensor(dataRef.setWriteAcquire(
+        return &asIntTensor(dataRef->setWriteAcquire(
             std::move(output)))->getRW();
     }
 }
@@ -158,17 +158,17 @@ FloatTensorRW * contData_writeFloatTensor(
         DataBlock *block, int contDataNum, NumSizes numSizesV, ...) {
 
     block->contDataWritten_.insert(contDataNum);
-    DataReference &dataRef = block->contData_[contDataNum];
+    DataReference *dataRef = block->contData_[contDataNum];
 
-    if (dataRef.canDirectWriteAcquire()) {
-        return &asFloatTensor(dataRef.directWriteAcquire())->getRW();
+    if (dataRef->canDirectWriteAcquire()) {
+        return &asFloatTensor(dataRef->directWriteAcquire())->getRW();
     } else {
         va_list sizesList;
         va_start(sizesList, numSizesV);
         DataPtr output = make_unique<FloatTensor>(numSizesV, sizesList);
         va_end(sizesList);
 
-        return &asFloatTensor(dataRef.setWriteAcquire(
+        return &asFloatTensor(dataRef->setWriteAcquire(
             std::move(output)))->getRW();
     }
 }
@@ -177,12 +177,12 @@ BranchRW * contData_writeBranch(
         DataBlock *block, int contDataNum, int size) {
 
     block->contDataWritten_.insert(contDataNum);
-    DataReference &dataRef = block->contData_[contDataNum];
+    DataReference *dataRef = block->contData_[contDataNum];
 
-    if (dataRef.canDirectWriteAcquire()) {
-        return asBranch(dataRef.directWriteAcquire());
+    if (dataRef->canDirectWriteAcquire()) {
+        return asBranch(dataRef->directWriteAcquire());
     } else {
         DataPtr output = make_unique<Branch>(size);
-        return asBranch(dataRef.setWriteAcquire(std::move(output)));
+        return asBranch(dataRef->setWriteAcquire(std::move(output)));
     }
 }

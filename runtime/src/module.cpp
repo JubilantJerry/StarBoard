@@ -2,7 +2,7 @@
 
 #include "module.hpp"
 
-Module::Module(ModulePortScheduler *scheduler,
+Module::Module(ModulePortScheduler &scheduler,
                int offset,
                int numInputs,
                std::vector<int> &&outModulePorts)
@@ -20,10 +20,10 @@ inline void Module::testInputRange(int modulePort) {
 
 DataBlock Module::acquire(int modulePort, LockHandle lock) {
     testInputRange(modulePort);
-    MessageQueue &queue = scheduler_->getQueue(modulePort);
+    MessageQueue &queue = scheduler_.getQueue(modulePort);
     DataPtr data = queue.dequeue();
     if (queue.size() == 0) {
-        scheduler_->setDataReady(modulePort, false);
+        scheduler_.setDataReady(modulePort, false);
     }
     lock.unlock();
 
@@ -45,11 +45,11 @@ void Module::release(int modulePort, DataBlock dataBlock) {
             int outModulePort, queueNumber;
 
             outModulePort = outModulePorts_[i];
-            queueNumber = scheduler_->pendingQueueAssignment(outModulePort);
-            LockHandle lock = scheduler_->lock(queueNumber);
+            queueNumber = scheduler_.pendingQueueAssignment(outModulePort);
+            LockHandle lock = scheduler_.lock(queueNumber);
 
-            scheduler_->getQueue(outModulePort).enqueue(std::move(data));
-            scheduler_->setDataReady(outModulePort, true);
+            scheduler_.getQueue(outModulePort).enqueue(std::move(data));
+            scheduler_.setDataReady(outModulePort, true);
         }
     }
 }

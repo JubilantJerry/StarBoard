@@ -10,8 +10,6 @@
 #include "stream_protocol.hpp"
 #include "data.hpp"
 
-#define LIB_DIR "build/lib/"
-
 TEST_CASE("Minimal worker process") {
     std::string workerName = "starboard_test_worker";
     GlobalProperties properties{

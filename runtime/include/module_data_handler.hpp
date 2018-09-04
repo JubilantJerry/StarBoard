@@ -31,6 +31,8 @@ public:
     virtual ~ModuleDataHandler() noexcept = default;
 };
 
+using ModuleDataHandlerPtr = std::unique_ptr<ModuleDataHandler>;
+
 class NativeModuleDataHandler: public ModuleDataHandler {
 private:
     ModuleFunction native_handler_;
