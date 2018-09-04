@@ -28,7 +28,7 @@ DataBlock Module::acquire(int modulePort, LockHandle lock) {
     lock.unlock();
 
     int numOutputs = outModulePorts_.size();
-    DataBlock dataBlock{numOutputs, 0};
+    DataBlock dataBlock{numOutputs};
     dataBlock.setInputMsg(std::move(data));
     return dataBlock;
 }
@@ -36,20 +36,20 @@ DataBlock Module::acquire(int modulePort, LockHandle lock) {
 void Module::release(int modulePort, DataBlock dataBlock) {
     (void)modulePort;
 
-    int numOutputs = dataBlock.numOutputs();
+    IntSet const &outputMsgWritten = dataBlock.getOutputMsgWritten();
+    IntSet::const_iterator end = outputMsgWritten.end();
 
-    for (int i = 0; i < numOutputs; i++) {
-        DataPtr data = dataBlock.takeOutputMsg(i);
+    for (IntSet::const_iterator it = outputMsgWritten.begin();
+         it != end; it++) {
 
-        if (data) {
-            int outModulePort, queueNumber;
+        int outPortNum = *it;
+        DataPtr data = dataBlock.takeOutputMsg(outPortNum);
+        int outModulePort = outModulePorts_[outPortNum];
+        int queueNumber = scheduler_.pendingQueueAssignment(outModulePort);
 
-            outModulePort = outModulePorts_[i];
-            queueNumber = scheduler_.pendingQueueAssignment(outModulePort);
-            LockHandle lock = scheduler_.lock(queueNumber);
+        LockHandle lock = scheduler_.lock(queueNumber);
 
-            scheduler_.getQueue(outModulePort).enqueue(std::move(data));
-            scheduler_.setDataReady(outModulePort, true);
-        }
+        scheduler_.getQueue(outModulePort).enqueue(std::move(data));
+        scheduler_.setDataReady(outModulePort, true);
     }
 }

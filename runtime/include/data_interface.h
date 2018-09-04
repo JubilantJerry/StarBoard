@@ -33,31 +33,31 @@ FloatTensorRW * outputMsg_moveFloatTensor(
 BranchRW * outputMsg_moveBranch(
         DataBlock *block, int outPortNum);
 
-IntTensorR * contData_getIntTensor(
-        DataBlock *block, int contDataNum);
+IntTensorR * inputContData_getIntTensor(
+        DataBlock *block, int inContDataNum);
 
-FloatTensorR * contData_getFloatTensor(
-        DataBlock *block, int contDataNum);
+FloatTensorR * inputContData_getFloatTensor(
+        DataBlock *block, int inContDataNum);
 
-BranchR * contData_getBranch(
-        DataBlock *block, int outPortNum);
+BranchR * inputContData_getBranch(
+        DataBlock *block, int inContDataNum);
 
-IntTensorRW * contData_setIntTensor(
-        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+IntTensorRW * outputContData_setIntTensor(
+        DataBlock *block, int outContDataNum, NumSizes numSizesV, ...);
 
-FloatTensorRW * contData_setFloatTensor(
-        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+FloatTensorRW * outputContData_setFloatTensor(
+        DataBlock *block, int outContDataNum, NumSizes numSizesV, ...);
 
-BranchRW * contData_setBranch(
+BranchRW * outputContData_setBranch(
         DataBlock *block, int outPortNum, int size);
 
-IntTensorRW * contData_writeIntTensor(
-        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+IntTensorRW * outputContData_writeIntTensor(
+        DataBlock *block, int outContDataNum, NumSizes numSizesV, ...);
 
-FloatTensorRW * contData_writeFloatTensor(
-        DataBlock *block, int contDataNum, NumSizes numSizesV, ...);
+FloatTensorRW * outputContData_writeFloatTensor(
+        DataBlock *block, int outContDataNum, NumSizes numSizesV, ...);
 
-BranchRW * contData_writeBranch(
+BranchRW * outputContData_writeBranch(
         DataBlock *block, int outPortNum, int size);
 
 #define INDEX(sizes, indices...) \
